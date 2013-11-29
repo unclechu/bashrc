@@ -191,4 +191,8 @@ alias vim-cli='\vim'
 # vi-mode
 set -o vi
 
+# incremental history search
+bind '"\e[A": history-search-backward'
+bind '"\e[B": history-search-forward'
+
 # vim: set ts=4 sw=4 expandtab :
