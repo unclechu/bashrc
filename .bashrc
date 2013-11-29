@@ -183,6 +183,9 @@ tty -s && stty werase ^- 2>/dev/null
 alias ls='ls --color=auto'
 eval "`dircolors`"
 alias la='ls -la --color=auto'
+if [ "$DISPLAY" != '' ]; then
+    alias vim='gvim'
+fi
 
 # vi-mode
 set -o vi
