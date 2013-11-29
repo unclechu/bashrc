@@ -186,6 +186,7 @@ alias la='ls -la --color=auto'
 if [ "$DISPLAY" != '' ]; then
     alias vim='gvim'
 fi
+alias vim-cli='\vim'
 
 # vi-mode
 set -o vi
