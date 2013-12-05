@@ -189,9 +189,6 @@ if [ "$DISPLAY" != '' ]; then
 fi
 alias vim-cli='\vim'
 
-# vi-mode
-set -o vi
-
 # incremental history search by arrows
 bind '"\e[A": history-search-backward'
 bind '"\e[B": history-search-forward'
