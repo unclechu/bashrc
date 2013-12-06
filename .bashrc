@@ -193,4 +193,8 @@ alias vim-cli='\vim'
 bind '"\e[A": history-search-backward'
 bind '"\e[B": history-search-forward'
 
+# menu complete like zsh
+bind '"\e[15~": menu-complete' # F5
+bind '"\e[17~": menu-complete-backward' # F6
+
 # vim: set ts=4 sw=4 expandtab :
