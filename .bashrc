@@ -184,10 +184,6 @@ alias ls='ls --color=auto'
 eval "`dircolors`"
 alias la='ls -la'
 alias al='ls -la'
-if [ "$DISPLAY" != '' ]; then
-    alias vim='gvim'
-fi
-alias vim-cli='\vim'
 
 # vi-mode
 set -o vi
