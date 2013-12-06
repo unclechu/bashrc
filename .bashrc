@@ -195,6 +195,8 @@ bind -m vi-insert '"\e[1;5C": vi-forward-word'
 bind -m vi-insert '"\e[1;5D": vi-backward-word'
 bind -m vi '"\e[1;5C": vi-forward-word'
 bind -m vi '"\e[1;5D": vi-backward-word'
+bind -m vi-insert '"\C-n": menu-complete'
+bind -m vi-insert '"\C-p": menu-complete-backward'
 
 # incremental history search by arrows
 bind '"\e[A": history-search-backward'
