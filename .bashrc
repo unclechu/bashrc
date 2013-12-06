@@ -189,15 +189,15 @@ if [ "$DISPLAY" != '' ]; then
 fi
 alias vim-cli='\vim'
 
-# incremental history search by arrows
-bind '"\e[A": history-search-backward'
-bind '"\e[B": history-search-forward'
-
 # vi-mode
 set -o vi
 bind -m vi-insert '"\e[1;5C": vi-forward-word'
 bind -m vi-insert '"\e[1;5D": vi-backward-word'
 bind -m vi '"\e[1;5C": vi-forward-word'
 bind -m vi '"\e[1;5D": vi-backward-word'
+
+# incremental history search by arrows
+bind '"\e[A": history-search-backward'
+bind '"\e[B": history-search-forward'
 
 # vim: set ts=4 sw=4 expandtab :
