@@ -255,6 +255,7 @@ USAGE
 
     for line in $list; do
         path="$CONFIGS_DIR/$line"
+        if [[ ! -d "$path" ]]; then continue; fi # if list item is not a directory
         cd "$path"
 
         if [[ -n "$($PS1_GIT_BIN status --porcelain 2>/dev/null)" ]]; then
