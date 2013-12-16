@@ -209,6 +209,7 @@ bind '"\e[B": history-search-forward'
 
 function update-git-configs {
     local CONFIGS_DIR="$HOME/.gitconfigs"
+    local OLDPATH="$PWD"
     local list=
     local path=
     local action=pull
@@ -264,6 +265,8 @@ USAGE
         echo "Git $action for \"$line\" repo"
         $PS1_GIT_BIN $action
     done
+
+    cd "$OLDPATH"
 }
 
 # vim: set ts=4 sw=4 expandtab :
