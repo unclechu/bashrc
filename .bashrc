@@ -208,11 +208,39 @@ bind '"\e[A": history-search-backward'
 bind '"\e[B": history-search-forward'
 
 function update-git-configs {
-    local CONFIGS_DIR=
+    local CONFIGS_DIR="$HOME/.gitconfigs"
     local list=
     local path=
+    local action=pull
 
-    CONFIGS_DIR="$HOME/.gitconfigs"
+    local USAGE="
+USAGE
+=====
+
+-h, --help
+	Show this message
+
+-u, --upload
+	git push
+"
+
+    for i in "$@"; do
+        case $i in
+            -h|--help)
+                echo "$USAGE"
+                return 0
+                ;;
+            -u|--upload)
+                action=push
+                ;;
+            *)
+                echo "Unknown argument \"$i\"" 1>&2
+                echo "$USAGE"
+                return 1
+                ;;
+        esac
+    done
+
     if [[ ! -d "$CONFIGS_DIR" ]]; then
         echo "Git-configs directory \"$CONFIGS_DIR\" is not exist" 1>&2
         return 1
@@ -226,9 +254,15 @@ function update-git-configs {
 
     for line in $list; do
         path="$CONFIGS_DIR/$line"
-        echo "Git pull for \"$line\" repo"
         cd "$path"
-        git pull
+
+        if [[ -n "$($PS1_GIT_BIN status --porcelain 2>/dev/null)" ]]; then
+            echo "Git repo \"$line\" have something to commit (skipped $action)" 1>&2
+            continue
+        fi
+        
+        echo "Git $action for \"$line\" repo"
+        $PS1_GIT_BIN $action
     done
 }
 
