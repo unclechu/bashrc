@@ -87,6 +87,8 @@ function prompt_command {
     local GIT_BRANCH=
     local GIT_DIRTY=
     local PWDNAME=$PWD
+    local REMOTE=false
+    local PS1_REMOTE=
 
     # beautify working directory name
     if [[ "${HOME}" == "${PWD}" ]]; then
@@ -95,8 +97,15 @@ function prompt_command {
         PWDNAME="~${PWD:${#HOME}}"
     fi
 
+    # detect remote mount
+    df -l "$PWD" &> /dev/null
+    if [ $? -eq 1 ]; then
+        REMOTE=true
+        PS1_REMOTE=" (${color_red}remote${color_off})"
+    fi
+
     # parse git status and get git variables
-    if [[ ! -z $PS1_GIT_BIN ]]; then
+    if [[ ! -z $PS1_GIT_BIN ]] && ! $REMOTE; then
         # check we are in git repo
         local CUR_DIR=$PWD
         while [[ ! -d "${CUR_DIR}/.git" ]] && [[ ! "${CUR_DIR}" == "/" ]] && [[ ! "${CUR_DIR}" == "~" ]] && [[ ! "${CUR_DIR}" == "" ]]; do CUR_DIR=${CUR_DIR%/*}; done
@@ -121,7 +130,7 @@ function prompt_command {
     [[ ! -z $VIRTUAL_ENV ]] && PS1_VENV=" (venv: ${VIRTUAL_ENV#$WORKON_HOME})"
 
     # calculate prompt length
-    local PS1_length=$((${#USER}+${#LOCAL_HOSTNAME}+${#PWDNAME}+${#PS1_GIT}+${#PS1_VENV}+3))
+    local PS1_length=$((${#USER}+${#LOCAL_HOSTNAME}+${#PWDNAME}+${#PS1_GIT}+${#PS1_VENV}+${#PS1_REMOTE}+3))
     local FILL=
 
     # if length is greater, than terminal width
@@ -155,6 +164,7 @@ function prompt_command {
     PS1="${PS1}@${color_yellow}${LOCAL_HOSTNAME}${color_off}"
     PS1="${PS1}:${color_blue}${PWDNAME}${color_off}"
     PS1="${PS1}${PS1_GIT}${PS1_VENV}"
+    PS1="${PS1}${PS1_REMOTE}"
     PS1="${PS1} ${FILL}\n${perm_symbol} "
 
     # get cursor position and add new line if we're not in first column
