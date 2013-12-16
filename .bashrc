@@ -83,7 +83,6 @@ esac
 
 function prompt_command {
     local PS1_GIT=
-    local PS1_VENV=
     local GIT_BRANCH=
     local GIT_DIRTY=
     local PWDNAME=$PWD
@@ -125,12 +124,11 @@ function prompt_command {
         fi
     fi
 
-    # build b/w prompt for git and virtual env
+    # build b/w prompt for git
     [[ ! -z $GIT_BRANCH ]] && PS1_GIT=" (git: ${GIT_BRANCH})"
-    [[ ! -z $VIRTUAL_ENV ]] && PS1_VENV=" (venv: ${VIRTUAL_ENV#$WORKON_HOME})"
 
     # calculate prompt length
-    local PS1_length=$((${#USER}+${#LOCAL_HOSTNAME}+${#PWDNAME}+${#PS1_GIT}+${#PS1_VENV}+${#PS1_REMOTE}+3))
+    local PS1_length=$((${#USER}+${#LOCAL_HOSTNAME}+${#PWDNAME}+${#PS1_GIT}+${#PS1_REMOTE}+3))
     local FILL=
 
     # if length is greater, than terminal width
@@ -154,16 +152,13 @@ function prompt_command {
                 PS1_GIT=" (git: ${color_red}${GIT_BRANCH}${color_off})"
             fi
         fi
-
-        # build python venv status for prompt
-        [[ ! -z $VIRTUAL_ENV ]] && PS1_VENV=" (venv: ${color_blue}${VIRTUAL_ENV#$WORKON_HOME}${color_off})"
     fi
 
     # set new color prompt
     PS1="${color_user}${USER}${color_off}"
     PS1="${PS1}@${color_yellow}${LOCAL_HOSTNAME}${color_off}"
     PS1="${PS1}:${color_blue}${PWDNAME}${color_off}"
-    PS1="${PS1}${PS1_GIT}${PS1_VENV}"
+    PS1="${PS1}${PS1_GIT}"
     PS1="${PS1}${PS1_REMOTE}"
     PS1="${PS1} ${FILL}\n${perm_symbol} "
 
