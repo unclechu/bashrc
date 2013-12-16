@@ -207,4 +207,29 @@ bind -m vi-insert '"\C-p": menu-complete-backward'
 bind '"\e[A": history-search-backward'
 bind '"\e[B": history-search-forward'
 
+function update-git-configs {
+    local CONFIGS_DIR=
+    local list=
+    local path=
+
+    CONFIGS_DIR="$HOME/.gitconfigs"
+    if [[ ! -d "$CONFIGS_DIR" ]]; then
+        echo "Git-configs directory \"$CONFIGS_DIR\" is not exist" 1>&2
+        return 1
+    fi
+
+    list=$(ls -A "${CONFIGS_DIR}")
+    if [[ $? -ne 0 ]]; then
+        echo "List directory \"$CONFIGS_DIR\" error" 1>&2
+        return 1
+    fi
+
+    for line in $list; do
+        path="$CONFIGS_DIR/$line"
+        echo "Git pull for \"$line\" repo"
+        cd "$path"
+        git pull
+    done
+}
+
 # vim: set ts=4 sw=4 expandtab :
