@@ -86,7 +86,7 @@ function prompt_command {
     local GIT_BRANCH=
     local GIT_DIRTY=
     local PWDNAME=$PWD
-    local REMOTE=false
+    local remote=false
     local PS1_REMOTE=
 
     # beautify working directory name
@@ -99,12 +99,12 @@ function prompt_command {
     # detect remote mount
     df -l "$PWD" &> /dev/null
     if [ $? -eq 1 ]; then
-        REMOTE=true
-        PS1_REMOTE=" (${color_red}remote${color_off})"
+        remote=true
+        PS1_REMOTE=" (remote)"
     fi
 
     # parse git status and get git variables
-    if [[ ! -z $PS1_GIT_BIN ]] && ! $REMOTE; then
+    if [[ ! -z $PS1_GIT_BIN ]] && ! $remote; then
         # check we are in git repo
         local CUR_DIR=$PWD
         while [[ ! -d "${CUR_DIR}/.git" ]] && [[ ! "${CUR_DIR}" == "/" ]] && [[ ! "${CUR_DIR}" == "~" ]] && [[ ! "${CUR_DIR}" == "" ]]; do CUR_DIR=${CUR_DIR%/*}; done
@@ -151,6 +151,10 @@ function prompt_command {
             else
                 PS1_GIT=" (git: ${color_red}${GIT_BRANCH}${color_off})"
             fi
+        fi
+
+        if $remote; then
+            PS1_REMOTE=" (${color_red}remote${color_off})"
         fi
     fi
 
