@@ -8,6 +8,7 @@ PATH="$HOME/.bin:$PATH"
 PATH="$HOME/.local/bin:$PATH"
 PATH="/usr/local/bin:$PATH"
 PATH="/usr/local/sbin:$PATH"
+PATH="/sbin:$PATH"
 
 export LANG="ru_RU.UTF-8"
 
