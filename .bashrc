@@ -199,6 +199,10 @@ alias al='ls -la'
 bind '"\e[A": history-search-backward'
 bind '"\e[B": history-search-forward'
 
+# comfortable menu complete
+bind '\C-n: menu-complete'
+bind '\C-p: menu-complete-backward'
+
 function update-git-configs {
     local CONFIGS_DIR="$HOME/.gitconfigs"
     local OLDPATH="$PWD"
