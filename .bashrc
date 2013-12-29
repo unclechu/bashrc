@@ -194,6 +194,10 @@ alias ls='ls --color=auto'
 eval "`dircolors`"
 alias la='ls -la'
 alias al='ls -la'
+alias gits='git status'
+alias gitl='git log'
+alias gitc='git commit'
+alias gita='git add'
 
 # incremental history search by arrows
 bind '"\e[A": history-search-backward'
