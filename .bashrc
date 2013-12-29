@@ -197,6 +197,7 @@ alias al='ls -la'
 alias gits='git status'
 alias gitl='git log'
 alias gitc='git commit'
+alias gitcm='git commit -m'
 alias gita='git add'
 
 # incremental history search by arrows
