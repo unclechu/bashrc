@@ -199,6 +199,7 @@ alias gitl='git log'
 alias gitc='git commit'
 alias gitcm='git commit -m'
 alias gita='git add'
+alias gitd='git diff'
 
 # incremental history search by arrows
 bind '"\e[A": history-search-backward'
