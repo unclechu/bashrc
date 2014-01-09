@@ -166,13 +166,6 @@ function prompt_command {
     PS1="${PS1}${PS1_GIT}"
     PS1="${PS1}${PS1_REMOTE}"
     PS1="${PS1} ${FILL}\n${perm_symbol} "
-
-    # get cursor position and add new line if we're not in first column
-    echo -en "\033[6n" && read -sdR CURPOS
-    [[ ${CURPOS##*;} -gt 1 ]] && echo "${color_error}↵${color_error_off}"
-
-    # set title
-    echo -ne "\033]0;${USER}@${LOCAL_HOSTNAME}:${PWDNAME}"; echo -ne "\007"
 }
 
 # set prompt command (title update and color prompt)
