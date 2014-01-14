@@ -191,6 +191,7 @@ alias gits='git status'
 alias gitl='git log'
 alias gitc='git commit'
 alias gitcm='git commit -m'
+alias gitcam='git commit -am'
 alias gita='git add'
 alias gitd='git diff'
 
