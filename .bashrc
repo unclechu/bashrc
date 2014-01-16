@@ -185,8 +185,8 @@ tty -s && stty werase ^- 2>/dev/null
 # aliases
 alias ls='ls --color=auto'
 eval "`dircolors`"
-alias la='ls -la'
-alias al='ls -la'
+alias la='ls -lah'
+alias al='ls -lah'
 alias gits='git status'
 alias gitl='git log'
 alias gitc='git commit'
