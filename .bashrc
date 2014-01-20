@@ -195,13 +195,11 @@ alias gitcam='git commit -am'
 alias gita='git add'
 alias gitd='git diff'
 
-# incremental history search by arrows
-bind '"\e[A": history-search-backward'
-bind '"\e[B": history-search-forward'
+set -o vi
 
-# comfortable menu complete
-bind '\C-n: menu-complete'
-bind '\C-p: menu-complete-backward'
+# incremental history search in vi mode by jk
+bind -m vi '"k": history-search-backward'
+bind -m vi '"j": history-search-forward'
 
 function update-git-configs {
     local CONFIGS_DIR="$HOME/.gitconfigs"
