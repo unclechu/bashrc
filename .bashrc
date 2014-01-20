@@ -201,6 +201,9 @@ set -o vi
 bind -m vi '"k": history-search-backward'
 bind -m vi '"j": history-search-forward'
 
+# deleting in Insert mode ^H (backward) and ^L (forward)
+bind -m vi-insert '"\C-l": delete-char'
+
 function update-git-configs {
     local CONFIGS_DIR="$HOME/.gitconfigs"
     local OLDPATH="$PWD"
