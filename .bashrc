@@ -217,6 +217,7 @@ alias ls='ls --color=auto'
 eval "`dircolors`"
 alias la='ls -lah'
 alias al='ls -lah'
+alias l='ls -lah'
 alias gits='git status'
 alias gitl='git log'
 alias gitc='git commit'
