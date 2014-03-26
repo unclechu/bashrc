@@ -29,34 +29,37 @@ shopt -s cdspell
 shopt -s cmdhist
 
 # chdir from absolute path to relative
-reg1="^/run/media/`whoami`/\([A-Za-z_-]\+\)/home/`whoami`/"
-reg2="^/media/`whoami`/\([A-Za-z_-]\+\)/home/`whoami`/"
-reg3="^/media/\([A-Za-z_-]\+\)/home/`whoami`/"
-if echo "`pwd`" | grep "$reg1" &>/dev/null \
-|| echo "`pwd`" | grep "$reg2" &>/dev/null \
-|| echo "`pwd`" | grep "$reg3" &>/dev/null; then
-    sed_search=
-    if echo "`pwd`" | grep "$reg1" &>/dev/null; then
-        sed_search="$reg1"
-    elif echo "`pwd`" | grep "$reg2" &>/dev/null; then
-        sed_search="$reg2"
-    elif echo "`pwd`" | grep "$reg3" &>/dev/null; then
-        sed_search="$reg3"
-    fi
-    sed_search=$(echo "$sed_search" | sed -e 's/\//\\\//g')
-    mount_point_name=$(echo "`pwd`" | sed -e "s/$sed_search.*$/\1/")
-    abs_tail=$(echo "`pwd`" | sed -e "s/$sed_search//")
-    new_cwd="$HOME/$mount_point_name/$abs_tail/"
-    if [ -d "$new_cwd" ]; then
-        if [ -d "$HOME/$abs_tail/" ]; then
-            cd "$HOME/$abs_tail/"
-        else
-            cd "$new_cwd"
+function cwd-abs-to-rel {
+    reg1="^/run/media/`whoami`/\([A-Za-z_-]\+\)/home/`whoami`/"
+    reg2="^/media/`whoami`/\([A-Za-z_-]\+\)/home/`whoami`/"
+    reg3="^/media/\([A-Za-z_-]\+\)/home/`whoami`/"
+    if echo "`pwd`" | grep "$reg1" &>/dev/null \
+    || echo "`pwd`" | grep "$reg2" &>/dev/null \
+    || echo "`pwd`" | grep "$reg3" &>/dev/null; then
+        sed_search=
+        if echo "`pwd`" | grep "$reg1" &>/dev/null; then
+            sed_search="$reg1"
+        elif echo "`pwd`" | grep "$reg2" &>/dev/null; then
+            sed_search="$reg2"
+        elif echo "`pwd`" | grep "$reg3" &>/dev/null; then
+            sed_search="$reg3"
         fi
+        sed_search=$(echo "$sed_search" | sed -e 's/\//\\\//g')
+        mount_point_name=$(echo "`pwd`" | sed -e "s/$sed_search.*$/\1/")
+        abs_tail=$(echo "`pwd`" | sed -e "s/$sed_search//")
+        new_cwd="$HOME/$mount_point_name/$abs_tail/"
+        if [ -d "$new_cwd" ]; then
+            if [ -d "$HOME/$abs_tail/" ]; then
+                cd "$HOME/$abs_tail/"
+            else
+                cd "$new_cwd"
+            fi
+        fi
+        unset sed_search mount_point_name abs_tail new_cwd
     fi
-    unset sed_search mount_point_name abs_tail new_cwd
-fi
-unset reg1 reg2 reg3
+    unset reg1 reg2 reg3
+}
+cwd-abs-to-rel
 
 # setup color variables
 color_is_on=
