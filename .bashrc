@@ -27,6 +27,8 @@ shopt -s checkwinsize
 shopt -s cdspell
 # save all lines of a multiple-line command in the same history entry (allows easy re-editing of multi-line commands)
 shopt -s cmdhist
+# cd to a directory by typing its name
+shopt -s autocd
 
 # chdir from absolute path to relative
 function cwd-abs-to-rel {
