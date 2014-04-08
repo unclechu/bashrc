@@ -101,9 +101,6 @@ export TERM=xterm-256color
 # grep colorize
 export GREP_OPTIONS="--color=auto"
 
-# some kind of optimization - check if git installed only on config load
-PS1_GIT_BIN=$(which git 2>/dev/null)
-
 if [ -f ~/.hostname ]; then
     LOCAL_HOSTNAME="`cat ~/.hostname`"
 else
@@ -118,9 +115,6 @@ case `id -u` in
 esac
 
 function prompt_command {
-    local PS1_GIT=
-    local GIT_BRANCH=
-    local GIT_DIRTY=
     local PWDNAME=$PWD
     local remote=false
     local PS1_REMOTE=
@@ -139,32 +133,8 @@ function prompt_command {
         PS1_REMOTE=" (remote)"
     fi
 
-    # parse git status and get git variables
-    if [[ ! -z $PS1_GIT_BIN ]] && ! $remote; then
-        # check we are in git repo
-        local CUR_DIR=$PWD
-        while [[ ! -d "${CUR_DIR}/.git" ]] && [[ ! "${CUR_DIR}" == "/" ]] && [[ ! "${CUR_DIR}" == "~" ]] && [[ ! "${CUR_DIR}" == "" ]]; do CUR_DIR=${CUR_DIR%/*}; done
-        if [[ -d "${CUR_DIR}/.git" ]]; then
-            # 'git repo for dotfiles' fix: show git status only in home dir and other git repos
-            if [[ "${CUR_DIR}" != "${HOME}" ]] || [[ "${PWD}" == "${HOME}" ]]; then
-                # get git branch
-                GIT_BRANCH=$($PS1_GIT_BIN symbolic-ref HEAD 2>/dev/null)
-                if [[ ! -z $GIT_BRANCH ]]; then
-                    GIT_BRANCH=${GIT_BRANCH#refs/heads/}
-
-                    # get git status
-                    local GIT_STATUS=$($PS1_GIT_BIN status --porcelain 2>/dev/null)
-                    [[ -n $GIT_STATUS ]] && GIT_DIRTY=1
-                fi
-            fi
-        fi
-    fi
-
-    # build b/w prompt for git
-    [[ ! -z $GIT_BRANCH ]] && PS1_GIT=" (git: ${GIT_BRANCH})"
-
     # calculate prompt length
-    local PS1_length=$((${#USER}+${#LOCAL_HOSTNAME}+${#PWDNAME}+${#PS1_GIT}+${#PS1_REMOTE}+3))
+    local PS1_length=$((${#USER}+${#LOCAL_HOSTNAME}+${#PWDNAME}+${#PS1_REMOTE}+3))
     local FILL=
 
     # if length is greater, than terminal width
@@ -180,15 +150,6 @@ function prompt_command {
     fi
 
     if $color_is_on; then
-        # build git status for prompt
-        if [[ ! -z $GIT_BRANCH ]]; then
-            if [[ -z $GIT_DIRTY ]]; then
-                PS1_GIT=" (git: ${color_green}${GIT_BRANCH}${color_off})"
-            else
-                PS1_GIT=" (git: ${color_red}${GIT_BRANCH}${color_off})"
-            fi
-        fi
-
         if $remote; then
             PS1_REMOTE=" (${color_red}remote${color_off})"
         fi
@@ -198,7 +159,6 @@ function prompt_command {
     PS1="${color_user}${USER}${color_off}"
     PS1="${PS1}@${color_yellow}${LOCAL_HOSTNAME}${color_off}"
     PS1="${PS1}:${color_blue}${PWDNAME}${color_off}"
-    PS1="${PS1}${PS1_GIT}"
     PS1="${PS1}${PS1_REMOTE}"
     PS1="${PS1} ${FILL}\n${perm_symbol} "
 }
@@ -291,13 +251,13 @@ USAGE
         if [[ ! -d "$path" ]]; then continue; fi # if list item is not a directory
         cd "$path"
 
-        if [[ -n "$($PS1_GIT_BIN status --porcelain 2>/dev/null)" ]]; then
+        if [[ -n "$(git status --porcelain 2>/dev/null)" ]]; then
             echo "Git repo \"$line\" have something to commit (skipped $action)" 1>&2
             continue
         fi
         
         echo "Git $action for \"$line\" repo"
-        $PS1_GIT_BIN $action
+        git $action
     done
 
     cd "$OLDPATH"
