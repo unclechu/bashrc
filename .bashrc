@@ -12,6 +12,8 @@ PATH="/sbin:$PATH"
 
 export LANG="ru_RU.UTF-8"
 
+export EDITOR=vim
+
 # don't put duplicate lines in the history
 export HISTCONTROL=ignoreboth:erasedups
 
