@@ -183,6 +183,8 @@ tty -s && stty werase ^- 2>/dev/null
 if [ "`uname`" != 'FreeBSD' ]; then
     alias ls='ls --color=auto'
     eval "`dircolors`"
+else
+    alias ls='ls -G'
 fi
 alias la='ls -lah'
 alias al='ls -lah'
