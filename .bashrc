@@ -180,8 +180,10 @@ export PGHOST=/tmp
 tty -s && stty werase ^- 2>/dev/null
 
 # aliases
-alias ls='ls --color=auto'
-eval "`dircolors`"
+if [ "`uname`" != 'FreeBSD' ]; then
+    alias ls='ls --color=auto'
+    eval "`dircolors`"
+fi
 alias la='ls -lah'
 alias al='ls -lah'
 alias l='ls -lah'
