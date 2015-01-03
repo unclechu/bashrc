@@ -225,6 +225,9 @@ USAGE
 -h, --help
 	Show this message
 
+-d, --download (default)
+	git pull
+
 -u, --upload
 	git push
 "
@@ -234,6 +237,9 @@ USAGE
 			-h|--help)
 				echo "$usage"
 				return 0
+				;;
+			-d|--download)
+				action=pull
 				;;
 			-u|--upload)
 				action=push
