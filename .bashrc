@@ -4,11 +4,7 @@
 [ -z "$PS1" ] && return
 
 # add local bin path
-PATH="$HOME/.bin:$PATH"
 PATH="$HOME/.local/bin:$PATH"
-PATH="/usr/local/bin:$PATH"
-PATH="/usr/local/sbin:$PATH"
-PATH="/sbin:$PATH"
 
 export LANGUAGE="ru_RU:ru"
 export LANG="ru_RU.UTF-8"
@@ -208,13 +204,21 @@ bind -m vi '"j": history-search-forward'
 bind -m vi-insert '"\C-l": delete-char'
 
 function update-git-configs {
-	local CONFIGS_DIR="$HOME/.gitconfigs"
-	local OLDPATH="$PWD"
+	if [ -z "$CONFIGS_PATH" ]; then
+		local CONFIGS_PATH="$HOME/.config/git-repos"
+	else
+		local CONFIGS_PATH="$CONFIGS_PATH"
+	fi
+	if [ -z "$OLD_PATH" ]; then
+		local OLD_PATH="$PWD"
+	else
+		local OLD_PATH="$OLD_PATH"
+	fi
 	local list=
 	local path=
 	local action=pull
 
-	local USAGE="
+	local usage="
 USAGE
 =====
 
@@ -228,7 +232,7 @@ USAGE
 	for i in "$@"; do
 		case $i in
 			-h|--help)
-				echo "$USAGE"
+				echo "$usage"
 				return 0
 				;;
 			-u|--upload)
@@ -236,29 +240,29 @@ USAGE
 				;;
 			*)
 				echo "Unknown argument \"$i\"" 1>&2
-				echo "$USAGE"
+				echo "$usage"
 				return 1
 				;;
 		esac
 	done
 
-	if [[ ! -d "$CONFIGS_DIR" ]]; then
-		echo "Git-configs directory \"$CONFIGS_DIR\" is not exist" 1>&2
+	if [ ! -d "$CONFIGS_PATH" ]; then
+		echo "Git-configs directory \"$CONFIGS_PATH\" is not exist" 1>&2
 		return 1
 	fi
 
-	list=$(ls -A "${CONFIGS_DIR}")
-	if [[ $? -ne 0 ]]; then
-		echo "List directory \"$CONFIGS_DIR\" error" 1>&2
+	list=$(ls -A "$CONFIGS_PATH")
+	if [ $? -ne 0 ]; then
+		echo "List directory \"$CONFIGS_PATH\" error" 1>&2
 		return 1
 	fi
 
 	for line in $list; do
-		path="$CONFIGS_DIR/$line"
-		if [[ ! -d "$path" ]]; then continue; fi # if list item is not a directory
+		path="$CONFIGS_PATH/$line"
+		if [ ! -d "$path" ]; then continue; fi # if list item is not a directory
 		cd "$path"
 
-		if [[ -n "$(git status --porcelain 2>/dev/null)" ]]; then
+		if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
 			echo "Git repo \"$line\" have something to commit (skipped $action)" 1>&2
 			continue
 		fi
@@ -267,7 +271,7 @@ USAGE
 		git $action
 	done
 
-	cd "$OLDPATH"
+	cd "$OLD_PATH"
 }
 
 # vim: set noet :
