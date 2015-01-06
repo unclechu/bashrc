@@ -117,6 +117,8 @@ function prompt_command {
 	local PWDNAME=$PWD
 	local remote=false
 	local PS1_REMOTE=
+	local pyvenv_name=
+	local pyvenv_chars=
 
 	# beautify working directory name
 	if [[ "${HOME}" == "${PWD}" ]]; then
@@ -132,8 +134,15 @@ function prompt_command {
 		PS1_REMOTE=" (remote)"
 	fi
 
+	if [ -n "$VIRTUAL_ENV" ]; then
+		pyvenv_name="$(basename "$VIRTUAL_ENV" "$(dirname "$VIRTUAL_ENV")")"
+		pyvenv_chars="(pyvenv: $pyvenv_name) "
+		pyvenv_name="(pyvenv: ${color_purple}${pyvenv_name}${color_off}) "
+	fi
+
 	# calculate prompt length
-	local PS1_length=$((${#USER}+${#LOCAL_HOSTNAME}+${#PWDNAME}+${#PS1_REMOTE}+3))
+	local PS1_length=$((${#pyvenv_chars}+${#USER}+
+		${#LOCAL_HOSTNAME}+${#PWDNAME}+${#PS1_REMOTE}+3))
 	local FILL=
 
 	# if length is greater, than terminal width
@@ -155,7 +164,7 @@ function prompt_command {
 	fi
 
 	# set new color prompt
-	PS1="${color_user}${USER}${color_off}"
+	PS1="${pyvenv_name}${color_user}${USER}${color_off}"
 	PS1="${PS1}@${color_yellow}${LOCAL_HOSTNAME}${color_off}"
 	PS1="${PS1}:${color_blue}${PWDNAME}${color_off}"
 	PS1="${PS1}${PS1_REMOTE}"
