@@ -284,6 +284,10 @@ USAGE
 
 		echo "Git $action for \"$line\" repo"
 		git $action
+
+		echo "Updating git submodules for \"$line\" repo"
+		git submodule update --init
+		git submodule update
 	done
 
 	cd "$OLD_PATH"
