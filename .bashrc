@@ -202,6 +202,7 @@ alias gitcm='git commit -m'
 alias gitcam='git commit -am'
 alias gita='git add'
 alias gitd='git diff'
+alias gitb='git branch | grep ^* | awk "{print \$2}"'
 
 set -o vi
 
