@@ -152,7 +152,7 @@ function prompt_command {
 	else
 		# else calculate fillsize
 		local fillsize=$(($COLUMNS-$PS1_length))
-		FILL=$color_purple
+		FILL=$color_white
 		while [[ $fillsize -gt 0 ]]; do FILL="${FILL}─"; fillsize=$(($fillsize-1)); done
 		FILL="${FILL}${color_off}"
 	fi
