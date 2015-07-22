@@ -204,15 +204,6 @@ alias gita='git add'
 alias gitd='git diff'
 alias gitb='git branch | grep ^* | awk "{print \$2}"'
 
-set -o vi
-
-# incremental history search in vi mode by jk
-bind -m vi '"k": history-search-backward'
-bind -m vi '"j": history-search-forward'
-
-# deleting in Insert mode ^H (backward) and ^L (forward)
-bind -m vi-insert '"\C-l": delete-char'
-
 function update-git-configs {
 	if [ -z "$CONFIGS_PATH" ]; then
 		local CONFIGS_PATH="$HOME/.config/git-repos"
