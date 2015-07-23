@@ -204,6 +204,10 @@ alias gita='git add'
 alias gitd='git diff'
 alias gitb='git branch | grep ^* | awk "{print \$2}"'
 
+bind 'set show-all-if-ambiguous on'
+bind '"\C-n":menu-complete'
+bind '"\C-p":menu-complete-backward'
+
 function update-git-configs {
 	if [ -z "$CONFIGS_PATH" ]; then
 		local CONFIGS_PATH="$HOME/.config/git-repos"
