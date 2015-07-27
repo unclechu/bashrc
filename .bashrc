@@ -204,6 +204,15 @@ alias gita='git add'
 alias gitd='git diff'
 alias gitb='git branch | grep ^* | awk "{print \$2}"'
 
+function ... {
+	local command='cd '
+	for i in $(seq $[$1]); do
+		command="${command}../"
+	done
+	$command
+	return $?
+}
+
 bind 'set show-all-if-ambiguous on'
 bind '"\C-n":menu-complete'
 bind '"\C-p":menu-complete-backward'
