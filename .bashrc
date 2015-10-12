@@ -307,7 +307,7 @@ if [ -z "$_JAVA_OPTIONS" ]; then
 	'
 fi
 
-if [ -z "$_JAVA_AWT_WM_NONREPARENTING"]; then
+if [ -z "$_JAVA_AWT_WM_NONREPARENTING" ]; then
 	export _JAVA_AWT_WM_NONREPARENTING=1
 fi
 
