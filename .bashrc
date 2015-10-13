@@ -6,9 +6,6 @@
 # add local bin path
 PATH="$HOME/.local/bin:$PATH"
 
-export LANGUAGE="ru_RU:ru"
-export LANG="ru_RU.UTF-8"
-
 export EDITOR=vim
 
 # don't put duplicate lines in the history
@@ -96,9 +93,6 @@ fi
 
 # 256 colors in terminal
 export TERM=xterm-256color
-
-# grep colorize
-export GREP_OPTIONS="--color=auto"
 
 if [ -f ~/.hostname ]; then
 	LOCAL_HOSTNAME="`cat ~/.hostname`"
