@@ -3,9 +3,6 @@
 # if not running interactively, don't do anything
 [ -z "$PS1" ] && return
 
-# add local bin path
-PATH="$HOME/.local/bin:$PATH"
-
 export EDITOR=vim
 
 # don't put duplicate lines in the history
