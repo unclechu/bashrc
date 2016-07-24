@@ -1,9 +1,11 @@
 # .bashrc
 
+is_termite_term=0
 if [[ $TERM == xterm-termite ]]; then
 	. /etc/profile.d/vte.sh
 	__vte_osc7
 	# __vte_prompt_command
+	is_termite_term=1
 fi
 
 # if not running interactively, don't do anything
@@ -312,6 +314,10 @@ fi
 
 if [ -z "$_JAVA_AWT_WM_NONREPARENTING" ]; then
 	export _JAVA_AWT_WM_NONREPARENTING=1
+fi
+
+if [ $is_termite_term == 1 ]; then
+	source ~/.bashrc
 fi
 
 # vim: set noet :
