@@ -1,9 +1,21 @@
 # .bashrc
 
+if [[ $TERM == xterm-termite ]]; then
+	. /etc/profile.d/vte.sh
+	__vte_osc7
+	# __vte_prompt_command
+fi
+
 # if not running interactively, don't do anything
 [ -z "$PS1" ] && return
 
-export EDITOR=vim
+if which nvim 0</dev/null 1>/dev/null 2>/dev/null; then
+	export EDITOR=nvim
+elif which vim 0</dev/null 1>/dev/null 2>/dev/null; then
+	export EDITOR=vim
+elif which nano 0</dev/null 1>/dev/null 2>/dev/null; then
+	export EDITOR=nano
+fi
 
 # don't put duplicate lines in the history
 export HISTCONTROL=ignoreboth:erasedups
