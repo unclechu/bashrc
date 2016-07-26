@@ -303,6 +303,18 @@ USAGE
 	cd "$OLD_PATH"
 }
 
+# silently spawn an application in background
+burp () {
+	local app=$1
+	shift
+	"$app" "$@" 0</dev/null 1>/dev/null 2>/dev/null &
+}
+_burp_completion () {
+	local cur=${COMP_WORDS[COMP_CWORD]}
+	COMPREPLY=($(compgen -A function -abck -- "$cur"))
+}
+complete -F _burp_completion -o default burp
+
 if [ -z "$_JAVA_OPTIONS" ]; then
 	export _JAVA_OPTIONS='
 		-Dawt.useSystemAAFontSettings=on
