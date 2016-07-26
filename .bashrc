@@ -222,17 +222,8 @@ bind 'set show-all-if-ambiguous on'
 bind '"\C-n":menu-complete'
 bind '"\C-p":menu-complete-backward'
 
-function update-git-configs {
-	if [ -z "$CONFIGS_PATH" ]; then
-		local CONFIGS_PATH="$HOME/.config/git-repos"
-	else
-		local CONFIGS_PATH="$CONFIGS_PATH"
-	fi
-	if [ -z "$OLD_PATH" ]; then
-		local OLD_PATH="$PWD"
-	else
-		local OLD_PATH="$OLD_PATH"
-	fi
+update-git-configs () {
+	[ -z "$CONFIGS_PATH" ] && local CONFIGS_PATH="$HOME/.config/git-repos"
 	local list=
 	local path=
 	local action=pull
@@ -284,23 +275,23 @@ USAGE
 
 	for line in $list; do
 		path="$CONFIGS_PATH/$line"
-		if [ ! -d "$path" ]; then continue; fi # if list item is not a directory
-		cd "$path"
+		[ ! -d "$path" ] && continue # if list item is not a directory
+		( # private scope of 'cd'
+			cd "$path"
 
-		if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
-			echo "Git repo \"$line\" have something to commit (skipped $action)" 1>&2
-			continue
-		fi
+			if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+				echo "Git repo \"$line\" have something to commit (skipped $action)" 1>&2
+				continue
+			fi
 
-		echo "Git $action for \"$line\" repo"
-		git $action
+			echo "Git $action for \"$line\" repo"
+			git $action
 
-		echo "Updating git submodules for \"$line\" repo"
-		git submodule update --init
-		git submodule update
+			echo "Updating git submodules for \"$line\" repo"
+			git submodule update --init
+			git submodule update
+		)
 	done
-
-	cd "$OLD_PATH"
 }
 
 # silently spawn an application in background
