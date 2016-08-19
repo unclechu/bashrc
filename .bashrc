@@ -294,6 +294,11 @@ USAGE
 			echo "Updating git submodules for \"$line\" repo"
 			git submodule update --init
 			git submodule update
+
+			if [ -f Makefile ]; then
+				echo "Building by 'make' tool"
+				make
+			fi
 		)
 	done
 }
