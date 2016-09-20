@@ -291,6 +291,10 @@ if [ -z "$_JAVA_AWT_WM_NONREPARENTING" ]; then
 	export _JAVA_AWT_WM_NONREPARENTING=1
 fi
 
+if [ -f ~/.bash_aliases ]; then
+	source ~/.bash_aliases
+fi
+
 if [ $is_termite_term == 1 ]; then
 	source ~/.bashrc
 fi
