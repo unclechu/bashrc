@@ -190,38 +190,6 @@ export PGHOST=/tmp
 # this is for delete words by ^W
 tty -s && stty werase ^- 2>/dev/null
 
-# aliases
-if [ "`uname`" != 'FreeBSD' ]; then
-	alias ls='ls --color=auto'
-	eval "`dircolors`"
-else
-	alias ls='ls -G'
-fi
-alias la='ls -lah'
-alias al='ls -lah'
-alias l='ls -lah'
-alias gits='git status'
-alias gitl='git log'
-alias gitc='git commit'
-alias gitcm='git commit -m'
-alias gita='git add'
-alias gitd='git diff'
-alias gitds='git diff --staged'
-alias gitb='git branch | grep ^* | awk "{print \$2}"'
-alias gitbn='git branch'
-alias gitco='git checkout'
-alias gitpl='git pull origin `gitb`'
-alias gitph='git push origin `gitb`'
-
-function ... {
-	local command='cd '
-	for i in $(seq $[$1]); do
-		command="${command}../"
-	done
-	$command
-	return $?
-}
-
 bind 'set show-all-if-ambiguous on'
 bind '"\C-n":menu-complete'
 bind '"\C-p":menu-complete-backward'
@@ -304,11 +272,6 @@ USAGE
 }
 
 # silently spawn an application in background
-burp () {
-	local app=$1
-	shift
-	"$app" "$@" 0</dev/null 1>/dev/null 2>/dev/null &
-}
 _burp_completion () {
 	local cur=${COMP_WORDS[COMP_CWORD]}
 	COMPREPLY=($(compgen -A function -abck -- "$cur"))
