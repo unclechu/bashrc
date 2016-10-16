@@ -1,15 +1,27 @@
 # .bashrc
 
-is_termite_term=0
-if [[ $TERM == xterm-termite ]]; then
-	. /etc/profile.d/vte.sh
-	__vte_osc7
-	# __vte_prompt_command
-	is_termite_term=1
-fi
-
 # if not running interactively, don't do anything
 [ -z "$PS1" ] && return
+
+if [ -n "$VTE_VERSION" ]; then
+
+	if [ -f '/opt/vte-ng-v0.46.0.a-git/etc/profile.d/vte.sh' ]; then
+		. '/opt/vte-ng-v0.46.0.a-git/etc/profile.d/vte.sh'
+	else
+		. /etc/profile.d/vte.sh
+	fi
+
+	__term_name_prefix=$( \
+		[ "$TERM" == 'xterm-termite' ] && \
+		echo 'termite | ' || echo '' \
+	)
+	__custom_vte_prompt_command() {
+		echo -n "$(__vte_prompt_command)" | sed -e "s/0;/0;$__term_name_prefix/"
+	}
+
+	# support colors
+	export TERM=xterm-256color
+fi
 
 if which nvim 0</dev/null 1>/dev/null 2>/dev/null; then
 	export EDITOR=nvim
@@ -118,9 +130,6 @@ if [ -x /usr/bin/tput ] && tput setaf 1 1>/dev/null 2>/dev/null; then
 	esac
 fi
 
-# 256 colors in terminal
-export TERM=xterm-256color
-
 if [ -f ~/.hostname ]; then
 	LOCAL_HOSTNAME="`cat ~/.hostname`"
 else
@@ -190,6 +199,10 @@ function prompt_command {
 	PS1="${PS1}:${color_blue}${PWDNAME}${color_off}"
 	PS1="${PS1}${PS1_REMOTE}"
 	PS1="${PS1} ${FILL}\n${perm_symbol} "
+
+	if [ -n "$VTE_VERSION" ]; then
+		__custom_vte_prompt_command
+	fi
 }
 
 # set prompt command (title update and color prompt)
@@ -309,10 +322,6 @@ fi
 
 if [ -f ~/.bash_aliases ]; then
 	source ~/.bash_aliases
-fi
-
-if [ $is_termite_term == 1 ]; then
-	source ~/.bashrc
 fi
 
 # vim: set noet :
