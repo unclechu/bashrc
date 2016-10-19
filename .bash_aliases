@@ -53,3 +53,28 @@ alias gitbn='git branch'
 alias gitco='git checkout'
 alias gitpl='git pull origin `gitb`'
 alias gitph='git push origin `gitb`'
+
+clean-vim() {
+	if [ $# -ne 1 ]; then
+		echo 'incorrect arguments count' 1>&2
+		echo 'target argument is required' 1>&2
+		return 1
+	fi
+	local target=$1
+	case "$target" in
+		swap)
+			find ~/.vim_swap/ -type f -name '*.swp' -exec rm {} \;
+			;;
+		backup)
+			find ~/.vim_backup/ -type f -name '*~' -exec rm {} \;
+			;;
+		all)
+			find ~/.vim_swap/ -type f -name '*.swp' -exec rm {} \;
+			find ~/.vim_backup/ -type f -name '*~' -exec rm {} \;
+			;;
+		*)
+			echo "unknown target argument: '$target'" 1>&2
+			return 1
+			;;
+	esac
+}
