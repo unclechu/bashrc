@@ -78,3 +78,9 @@ clean-vim() {
 			;;
 	esac
 }
+
+alias gp=$( \
+	[ -x "`which gpaste-client 2>/dev/null`" ] && echo 'gpaste-client' || \
+	([ -x "`which gpaste 2>/dev/null`" ] && echo 'gpaste' || \
+	echo 'echo gpaste not found 1>&2') \
+)
