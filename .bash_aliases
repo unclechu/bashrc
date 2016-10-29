@@ -84,3 +84,20 @@ alias gp=$( \
 	([ -x "`which gpaste 2>/dev/null`" ] && echo 'gpaste' || \
 	echo 'echo gpaste not found 1>&2') \
 )
+
+last-cmd() {
+	local hist=$(history 2 | sed -e '$d')
+	local i=$[0]
+	local c=$(echo "$hist" | wc -l)
+	echo "$hist" | while read line; do
+		i=$[i+1]
+		if [ "$i" -eq 1 ]; then
+			line=$(echo "$line" | sed -e 's/^[ 0-9]\+[ ]\+//')
+		fi
+		if [ "$i" -eq "$c" ]; then
+			echo -n "$line"
+		else
+			echo "$line"
+		fi
+	done
+}
