@@ -63,13 +63,13 @@ clean-vim() {
 	local target=$1
 	case "$target" in
 		swap)
-			find ~/.vim_swap/ -type f -name '*.swp' -exec rm {} \;
+			find ~/.vim_swap/ -type f -name '*.sw*' -exec rm {} \;
 			;;
 		backup)
 			find ~/.vim_backup/ -type f -name '*~' -exec rm {} \;
 			;;
 		all)
-			find ~/.vim_swap/ -type f -name '*.swp' -exec rm {} \;
+			find ~/.vim_swap/ -type f -name '*.sw*' -exec rm {} \;
 			find ~/.vim_backup/ -type f -name '*~' -exec rm {} \;
 			;;
 		*)
