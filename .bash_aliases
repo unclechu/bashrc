@@ -3,22 +3,24 @@
 shopt -s expand_aliases
 
 function ... {
+	local c=2
 	if [ $# -eq 0 ]; then
-		echo 'go up level argument is required' 1>&2
-		return 1
+		: # it's okay, taking `...` as `... 2` (because `..` is `... 1`)
 	elif [ $# -ne 1 ]; then
 		echo 'incorrect arguments count' 1>&2
 		return 1
 	elif [ "$1" != "$[$1]" ]; then
 		echo 'incorrect go up level argument' 1>&2
 		return 1
+	else
+		c="$1"
 	fi
 	local command='cd '
-	for i in $(seq $[$1]); do
+	for i in $(seq $[$c]); do
 		command="${command}../"
 	done
 	$command
-	return $?
+	return $[$?]
 }
 
 burp () {
