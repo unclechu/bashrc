@@ -1,0 +1,70 @@
+#!/bin/bash
+#
+# Wrapper for hsc2hs to compile '*.hsc' to '*.hs' but writing result directly
+# to stdout instead of file.
+#
+# Also it can read source file from stdin by '--pipe-in' flag.
+#
+# Useful for debugging in Vim (`:!hsc2hs-pipe`).
+#
+
+fail() {
+	[ "$1" -ne 0 ] && exit $[$1]
+}
+
+is_input_piped=0
+is_output_piped=1
+
+args=()
+for arg in "$@"; do
+	if [ "$arg" == "--pipe-in" ]; then
+		is_input_piped=1
+	elif [ "$arg" == "--no-pipe-out" ]; then
+		is_output_piped=0
+	elif [ "$arg" == "-?" -o "$arg" == "-h" -o "$arg" == "--help" ]; then
+		hsc2hs --help
+		retval=$[$?]
+		echo
+		echo '  --pipe-in      Read source from stdin'
+		echo '  --no-pipe-out  Prevent writing output to stdout'
+		echo '                 ("-o" or "--output" is required)'
+		exit $[$retval]
+	else
+		args+=("$arg")
+	fi
+done
+
+if [ "$is_input_piped" -eq 1 ]; then
+
+	tmp_input_file=$(mktemp --suffix=.hsc)
+	fail "$?"
+
+	# redirect stdin to temporary file
+	cat > "$tmp_input_file"
+	fail "$?"
+
+	# add temporary file name before all arguments
+	new_args=("$tmp_input_file")
+	new_args+=("${args[@]}")
+	args=("${new_args[@]}")
+fi
+
+if [ "$is_output_piped" -eq 1 ]; then
+
+	tmp_output_file=$(mktemp --suffix=.hs)
+	fail "$?"
+
+	# append temporary output file argument to arguments list
+	args+=( '-o' "$tmp_output_file" )
+fi
+
+hsc2hs "${args[@]}"
+fail "$?"
+
+if [ "$is_output_piped" -eq 1 ]; then
+	cat "$tmp_output_file"
+	fail "$?"
+fi
+
+[ -n "$tmp_input_file"  ] && rm -f "$tmp_input_file"
+[ -n "$tmp_output_file" ] && rm -f "$tmp_output_file"
