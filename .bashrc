@@ -106,29 +106,34 @@ color_yellow=
 color_blue=
 color_white=
 color_gray=
-color_bg_red=
 color_off=
 color_user=
-if [ -x /usr/bin/tput ] && tput setaf 1 1>/dev/null 2>/dev/null; then
+if [ "`which tput`" != "" ] \
+&& [ -x "`which tput`" ] \
+&& tput setaf 1 1>/dev/null 2>/dev/null; then
 	color_is_on=true
-	color_red="\[$(/usr/bin/tput setaf 1)\]"
-	color_green="\[$(/usr/bin/tput setaf 2)\]"
-	color_yellow="\[$(/usr/bin/tput setaf 3)\]"
-	color_blue="\[$(/usr/bin/tput setaf 6)\]"
-	color_white="\[$(/usr/bin/tput setaf 7)\]"
-	color_gray="\[$(/usr/bin/tput setaf 8)\]"
-	color_purple="\[$(/usr/bin/tput setaf 5)\]"
-	color_off="\[$(/usr/bin/tput sgr0)\]"
-
-	color_error="$(/usr/bin/tput setab 1)$(/usr/bin/tput setaf 7)"
-	color_error_off="$(/usr/bin/tput sgr0)"
+	color_red="\[$(tput setaf 1)\]"
+	color_green="\[$(tput setaf 2)\]"
+	color_yellow="\[$(tput setaf 3)\]"
+	color_blue="\[$(tput setaf 6)\]"
+	color_white="\[$(tput setaf 7)\]"
+	color_gray="\[$(tput setaf 8)\]"
+	color_purple="\[$(tput setaf 5)\]"
+	color_off="\[$(tput sgr0)\]"
 
 	# set user color
-	case `id -u` in
+	case "`id -u`" in
 		0) color_user="$color_red" ;;
 		*) color_user="$color_green" ;;
 	esac
 fi
+
+_tput() {
+	if [ "$color_is_on" == true ]; then
+		tput "$@"
+		return $?
+	fi
+}
 
 if [ -f ~/.hostname ]; then
 	LOCAL_HOSTNAME="`cat ~/.hostname`"
@@ -264,13 +269,16 @@ USAGE
 	done
 
 	if [ ! -d "$CONFIGS_PATH" ]; then
-		echo "Git-configs directory \"$CONFIGS_PATH\" is not exist" 1>&2
+		echo "$(_tput setab 1)$(_tput setaf 7 \
+			)Git-configs directory \"$CONFIGS_PATH\"" \
+			"is not exist$(_tput sgr0)" 1>&2
 		return 1
 	fi
 
 	list=$(ls -A "$CONFIGS_PATH")
 	if [ $? -ne 0 ]; then
-		echo "List directory \"$CONFIGS_PATH\" error" 1>&2
+		echo "$(_tput setab 1)$(_tput setaf 7 \
+			)List directory \"$CONFIGS_PATH\" error$(_tput sgr0)" 1>&2
 		return 1
 	fi
 
@@ -280,20 +288,33 @@ USAGE
 		( # private scope of 'cd'
 			cd "$path"
 
+			line="$(_tput setaf 3)${line}$(_tput sgr0)"
+
 			if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
-				echo "Git repo \"$line\" have something to commit (skipped $action)" 1>&2
+				echo "Git repo \"$line\"" \
+					"$(_tput setab 1)$(_tput setaf 7 \
+						)have something to commit$(_tput sgr0)" \
+					"$(_tput setab 7)$(_tput setaf 8 \
+						)(skipped $action)$(_tput sgr0)" 1>&2
 				continue
 			fi
 
-			echo "Git $action for \"$line\" repo"
-			git $action
+			echo "$(_tput setaf 6)Git ${action}$(_tput sgr0) for \"$line\" repo"
+			git "$action"
+			if [ $? -ne 0 ]; then
+				echo "$(_tput setab 1)$(_tput setaf 7)[X]$(_tput sgr0)" \
+					"$(_tput setaf 6)Git ${action}$(_tput sgr0) for \"$line\"" \
+					"$(_tput setab 1)$(_tput setaf 7)failed!$(_tput sgr0)" 1>&2
+			fi
 
-			echo "Updating git submodules for \"$line\" repo"
+			echo "$(_tput setaf 5)Updating git submodules$(_tput sgr0)" \
+				"for \"$line\" repo"
 			git submodule update --init
 			git submodule update
 
 			if [ -f Makefile ]; then
-				echo "Building by 'make' tool"
+				echo "$(_tput setaf 5)Building by 'make' tool$(_tput sgr0)" \
+					"for \"$line\" repo"
 				make
 			fi
 		)
