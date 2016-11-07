@@ -230,8 +230,12 @@ bind '"\C-p":menu-complete-backward'
 
 update-git-configs () {
 	[ -z "$CONFIGS_PATH" ] && local CONFIGS_PATH="$HOME/.config/git-repos"
+	local i=
 	local list=
+	local line=
 	local path=
+	local title=
+	local sfx=
 	local action=pull
 
 	local usage="
@@ -248,8 +252,11 @@ USAGE
 	git push
 "
 
+	local fail_pre="$(_tput setab 1)$(_tput setaf 7)[X]$(_tput sgr0)"
+	local fail_post="$(_tput setab 1)$(_tput setaf 7)failed!$(_tput sgr0)"
+
 	for i in "$@"; do
-		case $i in
+		case "$i" in
 			-h|--help)
 				echo "$usage"
 				return 0
@@ -289,6 +296,7 @@ USAGE
 			cd "$path"
 
 			line="$(_tput setaf 3)${line}$(_tput sgr0)"
+			sfx="for \"$line\""
 
 			if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
 				echo "Git repo \"$line\"" \
@@ -299,23 +307,23 @@ USAGE
 				continue
 			fi
 
-			echo "$(_tput setaf 6)Git ${action}$(_tput sgr0) for \"$line\" repo"
+			title="$(_tput setaf 6)Git ${action}$(_tput sgr0)"
+			echo "$title $sfx repo"
 			git "$action"
-			if [ $? -ne 0 ]; then
-				echo "$(_tput setab 1)$(_tput setaf 7)[X]$(_tput sgr0)" \
-					"$(_tput setaf 6)Git ${action}$(_tput sgr0) for \"$line\"" \
-					"$(_tput setab 1)$(_tput setaf 7)failed!$(_tput sgr0)" 1>&2
-			fi
+			[ $? -ne 0 ] && echo "$fail_pre $title $sfx $fail_post" 1>&2
 
-			echo "$(_tput setaf 5)Updating git submodules$(_tput sgr0)" \
-				"for \"$line\" repo"
+			title="$(_tput setaf 5)Updating git submodules$(_tput sgr0)"
+			echo "$title $sfx repo"
 			git submodule update --init
+			[ $? -ne 0 ] && echo "$fail_pre $title $sfx $fail_post" 1>&2
 			git submodule update
+			[ $? -ne 0 ] && echo "$fail_pre $title $sfx $fail_post" 1>&2
 
 			if [ -f Makefile ]; then
-				echo "$(_tput setaf 5)Building by 'make' tool$(_tput sgr0)" \
-					"for \"$line\" repo"
+				title="$(_tput setaf 5)Building by 'make' tool$(_tput sgr0)"
+				echo "$title $sfx repo"
 				make
+				[ $? -ne 0 ] && echo "$fail_pre $title $sfx $fail_post" 1>&2
 			fi
 		)
 	done
