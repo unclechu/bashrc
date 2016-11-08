@@ -2,6 +2,7 @@
 
 shopt -s expand_aliases
 
+# go "$1" levels up
 function ... {
 	local c=2
 	if [ $# -eq 0 ]; then
@@ -23,6 +24,7 @@ function ... {
 	return $[$?]
 }
 
+# silent process in background
 burp () {
 	if [ $# -lt 1 ]; then
 		echo 'not enough arguments to burp' 1>&2
@@ -34,6 +36,7 @@ burp () {
 	return $?
 }
 
+# ls stuff
 if [ "`uname`" != 'FreeBSD' ]; then
 	alias ls='ls --color=auto'
 	eval "`dircolors`"
@@ -43,6 +46,8 @@ fi
 alias la='ls -lah'
 alias al='ls -lah'
 alias l='ls -lah'
+
+# git stuff
 alias gits='git status'
 alias gitl='git log'
 alias gitc='git commit'
@@ -81,12 +86,14 @@ clean-vim() {
 	esac
 }
 
+# shortcut for gpaste cli
 alias gp=$( \
 	[ -x "`which gpaste-client 2>/dev/null`" ] && echo 'gpaste-client' || \
 	([ -x "`which gpaste 2>/dev/null`" ] && echo 'gpaste' || \
 	echo 'echo gpaste not found 1>&2') \
 )
 
+# prints last command as string
 last-cmd() {
 	local hist=$(history 2 | sed -e '$d')
 	local i=$[0]
@@ -102,4 +109,18 @@ last-cmd() {
 			echo "$line"
 		fi
 	done
+}
+
+# 'mkdir' and 'cd' to it
+mkdircd() {
+	mkdir "$@"
+	local n=$[$?]
+	[ $n -ne 0 ] && return $n
+	local dir=
+	for arg in "$@"; do
+		[ "${arg:0:1}" != "-" ] && dir="$arg"
+	done
+	if [ -n "$dir" ] && [ -d "$dir" ]; then
+		cd "$dir"
+	fi
 }
