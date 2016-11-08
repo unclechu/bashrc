@@ -122,5 +122,6 @@ mkdircd() {
 	done
 	if [ -n "$dir" ] && [ -d "$dir" ]; then
 		cd "$dir"
+		return $?
 	fi
 }
