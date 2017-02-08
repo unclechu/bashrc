@@ -1,40 +1,7 @@
+#!/bin/bash
 # .bash_aliases
 
 shopt -s expand_aliases
-
-# go "$1" levels up
-function ... {
-	local c=2
-	if [ $# -eq 0 ]; then
-		: # it's okay, taking `...` as `... 2` (because `..` is `... 1`)
-	elif [ $# -ne 1 ]; then
-		echo 'incorrect arguments count' 1>&2
-		return 1
-	elif [ "$1" != "$[$1]" ]; then
-		echo 'incorrect go up level argument' 1>&2
-		return 1
-	else
-		c="$1"
-	fi
-	local command='cd '
-	for i in $(seq $[$c]); do
-		command="${command}../"
-	done
-	$command
-	return $[$?]
-}
-
-# silent process in background
-burp () {
-	if [ $# -lt 1 ]; then
-		echo 'not enough arguments to burp' 1>&2
-		return 1
-	fi
-	local app=$1
-	shift
-	"$app" "$@" 0</dev/null 1>/dev/null 2>/dev/null &
-	return $?
-}
 
 # ls stuff
 if [ "`uname`" != 'FreeBSD' ]; then
@@ -61,7 +28,48 @@ alias gitco='git checkout'
 alias gitpl='git pull origin `gitb`'
 alias gitph='git push origin `gitb`'
 
-clean-vim() {
+# shortcut for gpaste cli
+alias gp=$( \
+	[ -x "`which gpaste-client 2>/dev/null`" ] && echo 'gpaste-client' || \
+	([ -x "`which gpaste 2>/dev/null`" ] && echo 'gpaste' || \
+	echo 'echo gpaste not found 1>&2') \
+)
+
+# go "$1" levels up
+function ... {
+	local c=2
+	if [ $# -eq 0 ]; then
+		: # it's okay, taking `...` as `... 2` (because `..` is `... 1`)
+	elif [ $# -ne 1 ]; then
+		echo 'incorrect arguments count' 1>&2
+		return 1
+	elif [ "$1" != "$[$1]" ]; then
+		echo 'incorrect go up level argument' 1>&2
+		return 1
+	else
+		c="$1"
+	fi
+	local command='cd '
+	for i in $(seq $[$c]); do
+		command="${command}../"
+	done
+	$command
+	return $[$?]
+}
+
+# silent process in background
+function burp {
+	if [ $# -lt 1 ]; then
+		echo 'not enough arguments to burp' 1>&2
+		return 1
+	fi
+	local app=$1
+	shift
+	"$app" "$@" 0</dev/null 1>/dev/null 2>/dev/null &
+	return $?
+}
+
+function clean-vim {
 	if [ $# -ne 1 ]; then
 		echo 'incorrect arguments count' 1>&2
 		echo 'target argument is required' 1>&2
@@ -86,15 +94,8 @@ clean-vim() {
 	esac
 }
 
-# shortcut for gpaste cli
-alias gp=$( \
-	[ -x "`which gpaste-client 2>/dev/null`" ] && echo 'gpaste-client' || \
-	([ -x "`which gpaste 2>/dev/null`" ] && echo 'gpaste' || \
-	echo 'echo gpaste not found 1>&2') \
-)
-
 # prints last command as string
-last-cmd() {
+function last-cmd {
 	local hist=$(history 2 | sed -e '$d')
 	local i=$[0]
 	local c=$(echo "$hist" | wc -l)
@@ -112,7 +113,7 @@ last-cmd() {
 }
 
 # 'mkdir' and 'cd' to it
-mkdircd() {
+function mkdircd {
 	mkdir "$@"
 	local n=$[$?]
 	[ $n -ne 0 ] && return $n

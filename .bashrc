@@ -1,3 +1,4 @@
+#!/bin/bash
 # .bashrc
 
 # if not running interactively, don't do anything
@@ -49,91 +50,12 @@ shopt -s cmdhist
 # cd to a directory by typing its name
 shopt -s autocd
 
-# chdir from absolute path to relative
-function cwd-abs-to-rel {
+__MY_BASHRC_CONFIGS_DIR=$(dirname "`readlink -f "${BASH_SOURCE[0]}"`")
 
-	local wd=`pwd`
+. "$__MY_BASHRC_CONFIGS_DIR/utils/colors.sh"
+. "$__MY_BASHRC_CONFIGS_DIR/utils/cwd-abs-to-rel.sh"
 
-	local reg1="^/run/media/`whoami`/\([A-Za-z_-]\+\)/home/`whoami`/"
-	local reg2="^/media/`whoami`/\([A-Za-z_-]\+\)/home/`whoami`/"
-	local reg3="^/media/\([A-Za-z_-]\+\)/home/`whoami`/"
-
-	if echo "$wd" | grep "$reg1" 1>/dev/null 2>/dev/null \
-	|| echo "$wd" | grep "$reg2" 1>/dev/null 2>/dev/null \
-	|| echo "$wd" | grep "$reg3" 1>/dev/null 2>/dev/null; then
-		local sed_search=
-		if echo "$wd" | grep "$reg1" 1>/dev/null 2>/dev/null; then
-			sed_search="$reg1"
-		elif echo "$wd" | grep "$reg2" 1>/dev/null 2>/dev/null; then
-			sed_search="$reg2"
-		elif echo "$wd" | grep "$reg3" 1>/dev/null 2>/dev/null; then
-			sed_search="$reg3"
-		fi
-		sed_search=$(echo "$sed_search" | sed -e 's/\//\\\//g')
-		local mount_point_name=$(echo "$wd" | sed -e "s/$sed_search.*$/\1/")
-		local abs_tail=$(echo "$wd" | sed -e "s/$sed_search//")
-		local new_cwd="$HOME/$mount_point_name/$abs_tail/"
-		if [ -d "$new_cwd" ]; then
-			if [ -d "$HOME/$abs_tail/" ]; then
-				cd "$HOME/$abs_tail/"
-			else
-				cd "$new_cwd"
-			fi
-		fi
-	else
-		local wdtail=${wd:$[${#HOME}+1]}
-		if [ ${#wdtail} -eq 0 ]; then
-			return 0
-		fi
-		local wdsliced=$HOME/${wdtail#*/}
-		if [ ! -d "$wdsliced" ]; then
-			return 0
-		fi
-		local wdinode=$[$(stat -c '%i' "$wd")]
-		local wdslicedinode=$[$(stat -c '%i' "$wdsliced")]
-		if [ $wdinode -eq $wdslicedinode ]; then
-			cd "$wdsliced"
-		fi
-	fi
-}
 cwd-abs-to-rel
-
-# setup color variables
-color_is_on=
-color_red=
-color_green=
-color_yellow=
-color_blue=
-color_white=
-color_gray=
-color_off=
-color_user=
-if [ "`which tput`" != "" ] \
-&& [ -x "`which tput`" ] \
-&& tput setaf 1 1>/dev/null 2>/dev/null; then
-	color_is_on=true
-	color_red="\[$(tput setaf 1)\]"
-	color_green="\[$(tput setaf 2)\]"
-	color_yellow="\[$(tput setaf 3)\]"
-	color_blue="\[$(tput setaf 6)\]"
-	color_white="\[$(tput setaf 7)\]"
-	color_gray="\[$(tput setaf 8)\]"
-	color_purple="\[$(tput setaf 5)\]"
-	color_off="\[$(tput sgr0)\]"
-
-	# set user color
-	case "`id -u`" in
-		0) color_user="$color_red" ;;
-		*) color_user="$color_green" ;;
-	esac
-fi
-
-_tput() {
-	if [ "$color_is_on" == true ]; then
-		tput "$@"
-		return $?
-	fi
-}
 
 if [ -f ~/.hostname ]; then
 	LOCAL_HOSTNAME="`cat ~/.hostname`"
@@ -228,109 +150,8 @@ bind 'set show-all-if-ambiguous on'
 bind '"\C-n":menu-complete'
 bind '"\C-p":menu-complete-backward'
 
-update-git-configs () {
-	[ -z "$CONFIGS_PATH" ] && local CONFIGS_PATH="$HOME/.config/git-repos"
-	local i=
-	local list=
-	local line=
-	local path=
-	local title=
-	local sfx=
-	local action=pull
-
-	local usage="
-USAGE
-=====
-
--h, --help
-	Show this message
-
--d, --download (default)
-	git pull
-
--u, --upload
-	git push
-"
-
-	local fail_pre="$(_tput setab 1)$(_tput setaf 7)[X]$(_tput sgr0)"
-	local fail_post="$(_tput setab 1)$(_tput setaf 7)failed!$(_tput sgr0)"
-
-	for i in "$@"; do
-		case "$i" in
-			-h|--help)
-				echo "$usage"
-				return 0
-				;;
-			-d|--download)
-				action=pull
-				;;
-			-u|--upload)
-				action=push
-				;;
-			*)
-				echo "Unknown argument \"$i\"" 1>&2
-				echo "$usage"
-				return 1
-				;;
-		esac
-	done
-
-	if [ ! -d "$CONFIGS_PATH" ]; then
-		echo "$(_tput setab 1)$(_tput setaf 7 \
-			)Git-configs directory \"$CONFIGS_PATH\"" \
-			"is not exist$(_tput sgr0)" 1>&2
-		return 1
-	fi
-
-	list=$(ls -A "$CONFIGS_PATH")
-	if [ $? -ne 0 ]; then
-		echo "$(_tput setab 1)$(_tput setaf 7 \
-			)List directory \"$CONFIGS_PATH\" error$(_tput sgr0)" 1>&2
-		return 1
-	fi
-
-	for line in $list; do
-		path="$CONFIGS_PATH/$line"
-		[ ! -d "$path" ] && continue # if list item is not a directory
-		( # private scope of 'cd'
-			cd "$path"
-
-			line="$(_tput setaf 3)${line}$(_tput sgr0)"
-			sfx="for \"$line\""
-
-			if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
-				echo "Git repo \"$line\"" \
-					"$(_tput setab 1)$(_tput setaf 7 \
-						)have something to commit$(_tput sgr0)" \
-					"$(_tput setab 7)$(_tput setaf 8 \
-						)(skipped $action)$(_tput sgr0)" 1>&2
-				continue
-			fi
-
-			title="$(_tput setaf 6)Git ${action}$(_tput sgr0)"
-			echo "$title $sfx repo"
-			git "$action"
-			[ $? -ne 0 ] && echo "$fail_pre $title $sfx $fail_post" 1>&2
-
-			title="$(_tput setaf 5)Updating git submodules$(_tput sgr0)"
-			echo "$title $sfx repo"
-			git submodule update --init
-			[ $? -ne 0 ] && echo "$fail_pre $title $sfx $fail_post" 1>&2
-			git submodule update
-			[ $? -ne 0 ] && echo "$fail_pre $title $sfx $fail_post" 1>&2
-
-			if [ -f Makefile ]; then
-				title="$(_tput setaf 5)Building by 'make' tool$(_tput sgr0)"
-				echo "$title $sfx repo"
-				make
-				[ $? -ne 0 ] && echo "$fail_pre $title $sfx $fail_post" 1>&2
-			fi
-		)
-	done
-}
-
 # silently spawn an application in background
-_burp_completion () {
+function _burp_completion {
 	local cur=${COMP_WORDS[COMP_CWORD]}
 	COMPREPLY=($(compgen -A function -abck -- "$cur"))
 }
@@ -350,7 +171,7 @@ if [ -z "$_JAVA_AWT_WM_NONREPARENTING" ]; then
 fi
 
 if [ -f ~/.bash_aliases ]; then
-	source ~/.bash_aliases
+	. ~/.bash_aliases
 fi
 
 # vim: set noet :

@@ -1,0 +1,102 @@
+#!/bin/bash
+
+__MY_BASHRC_CONFIGS_DIR="$(dirname "`readlink -f "${BASH_SOURCE[0]}"`")/.."
+
+. "$__MY_BASHRC_CONFIGS_DIR/utils/colors.sh"
+
+if [ -z "$CONFIGS_PATH" ]; then
+	CONFIGS_PATH="$HOME/.config/git-repos"
+fi
+
+action=pull
+
+usage="
+USAGE
+=====
+
+-h, --help
+	Show this message
+
+-d, --download (default)
+	git pull
+
+-u, --upload
+	git push
+"
+
+fail_pre="$(_tput setab 1)$(_tput setaf 7)[X]$(_tput sgr0)"
+fail_post="$(_tput setab 1)$(_tput setaf 7)failed!$(_tput sgr0)"
+
+
+for i in "$@"; do
+	case "$i" in
+		-h|--help)
+			echo "$usage"
+			return 0
+			;;
+		-d|--download)
+			action=pull
+			;;
+		-u|--upload)
+			action=push
+			;;
+		*)
+			echo "Unknown argument \"$i\"" 1>&2
+			echo "$usage"
+			return 1
+			;;
+	esac
+done
+
+if [ ! -d "$CONFIGS_PATH" ]; then
+	echo "$(_tput setab 1)$(_tput setaf 7 \
+		)Git-configs directory \"$CONFIGS_PATH\"" \
+		"is not exist$(_tput sgr0)" 1>&2
+	return 1
+fi
+
+list=$(ls -A "$CONFIGS_PATH")
+if [ $? -ne 0 ]; then
+	echo "$(_tput setab 1)$(_tput setaf 7 \
+		)List directory \"$CONFIGS_PATH\" error$(_tput sgr0)" 1>&2
+	return 1
+fi
+
+for line in $list; do
+	path="$CONFIGS_PATH/$line"
+	[ ! -d "$path" ] && continue # if list item is not a directory
+	( # private scope of 'cd'
+		cd "$path"
+
+		line="$(_tput setaf 3)${line}$(_tput sgr0)"
+		sfx="for \"$line\""
+
+		if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+			echo "Git repo \"$line\"" \
+				"$(_tput setab 1)$(_tput setaf 7 \
+					)have something to commit$(_tput sgr0)" \
+				"$(_tput setab 7)$(_tput setaf 8 \
+					)(skipped $action)$(_tput sgr0)" 1>&2
+			continue
+		fi
+
+		title="$(_tput setaf 6)Git ${action}$(_tput sgr0)"
+		echo "$title $sfx repo"
+		git "$action"
+		[ $? -ne 0 ] && echo "$fail_pre $title $sfx $fail_post" 1>&2
+
+		title="$(_tput setaf 5)Updating git submodules$(_tput sgr0)"
+		echo "$title $sfx repo"
+		git submodule update --init
+		[ $? -ne 0 ] && echo "$fail_pre $title $sfx $fail_post" 1>&2
+		git submodule update
+		[ $? -ne 0 ] && echo "$fail_pre $title $sfx $fail_post" 1>&2
+
+		if [ -f Makefile ]; then
+			title="$(_tput setaf 5)Building by 'make' tool$(_tput sgr0)"
+			echo "$title $sfx repo"
+			make
+			[ $? -ne 0 ] && echo "$fail_pre $title $sfx $fail_post" 1>&2
+		fi
+	)
+done
