@@ -95,7 +95,7 @@ for line in $list; do
 		if [ -f Makefile ]; then
 			title="$(_tput setaf 5)Building by 'make' tool$(_tput sgr0)"
 			echo "$title $sfx repo"
-			make
+			make --always-make
 			[ $? -ne 0 ] && echo "$fail_pre $title $sfx $fail_post" 1>&2
 		fi
 	)
