@@ -28,8 +28,9 @@ alias gitco='git checkout'
 alias gitpl='git pull origin `gitb`'
 alias gitph='git push origin `gitb`'
 
-# light colorscheme for tmux
-alias tmuxl='env _TMUX_COLOR=light tmux'
+# specific colorscheme for tmux
+alias tmuxdc='env _TMUX_COLOR=dark  tmux'
+alias tmuxlc='env _TMUX_COLOR=light tmux'
 
 # shortcut for gpaste cli
 alias gp=$( \
