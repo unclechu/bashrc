@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [[ -z $TMUX ]]; then
+	echo 'This app cannot be used outside of tmux session' 1>&2
+	exit 1
+fi
+
 if (( $# < 1 )); then
 	echo 'This app requires an argument' 1>&2
 	exit 1
