@@ -1,0 +1,36 @@
+#!/bin/bash
+
+if (( $# < 1 )); then
+	echo 'This app requires an argument' 1>&2
+	exit 1
+fi
+
+function show-help {
+	printf 'Usage: %s (cd)\n' "$(basename "$0")"
+}
+
+case "$1" in
+	help|-h|--help)
+		show-help
+		exit 0
+		;;
+	cd)
+		shift
+		if (( $# != 1 )); then
+			printf 'Incorrect arguments for tmuxsh-cd: "%s"\n' "$*" 1>&2
+			exit 1
+		fi
+		dir=$1
+		if [[ ! -d $dir ]]; then
+			printf 'Cannot change directory to "%s"' "$dir" 1>&2
+			printf ' becuase it does not exists\n' 1>&2
+			exit 1
+		fi
+		tmux setenv _TMUX_CD "$dir"
+		;;
+	*)
+		printf 'Unknown command "%s"\n' "$1" 1>&2
+		show-help 1>&2
+		exit 1
+		;;
+esac
