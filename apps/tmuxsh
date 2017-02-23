@@ -11,7 +11,7 @@ if (( $# < 1 )); then
 fi
 
 function show-help {
-	printf 'Usage: %s (cd)\n' "$(basename "$0")"
+	printf 'Usage: %s (cd)\n' "$(basename -- "$0")"
 }
 
 case "$1" in
@@ -32,6 +32,16 @@ case "$1" in
 			exit 1
 		fi
 		tmux setenv _TMUX_CD "$dir"
+		exit $?
+		;;
+	nocd)
+		shift
+		if (( $# != 0 )); then
+			printf 'Incorrect arguments for tmuxsh-nocd: "%s"\n' "$*" 1>&2
+			exit 1
+		fi
+		tmux setenv _TMUX_CD ''
+		exit $?
 		;;
 	*)
 		printf 'Unknown command "%s"\n' "$1" 1>&2

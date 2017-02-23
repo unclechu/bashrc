@@ -10,8 +10,8 @@ color_white=
 color_gray=
 color_off=
 color_user=
-if [ "`which tput`" != "" ] \
-&& [ -x "`which tput`" ] \
+if [[ `which tput` != '' ]] \
+&& [[ -x `which tput` ]] \
 && tput setaf 1 1>/dev/null 2>/dev/null; then
 	color_is_on=true
 	color_red="\[$(tput setaf 1)\]"
@@ -25,13 +25,13 @@ if [ "`which tput`" != "" ] \
 
 	# set user color
 	case "`id -u`" in
-		0) color_user="$color_red" ;;
-		*) color_user="$color_green" ;;
+		0) color_user=$color_red   ;;
+		*) color_user=$color_green ;;
 	esac
 fi
 
 _tput() {
-	if [ "$color_is_on" == true ]; then
+	if [[ $color_is_on == true ]]; then
 		tput "$@"
 		return $?
 	fi

@@ -4,7 +4,7 @@
 shopt -s expand_aliases
 
 # ls stuff
-if [ "`uname`" != 'FreeBSD' ]; then
+if [[ `uname` != FreeBSD ]]; then
 	alias ls='ls --color=auto'
 	eval "`dircolors`"
 else
@@ -33,37 +33,37 @@ alias tmuxdc='env _TMUX_COLOR=dark  tmux'
 alias tmuxlc='env _TMUX_COLOR=light tmux'
 
 # shortcut for gpaste cli
-alias gp=$( \
-	[ -x "`which gpaste-client 2>/dev/null`" ] && echo 'gpaste-client' || \
-	([ -x "`which gpaste 2>/dev/null`" ] && echo 'gpaste' || \
-	echo 'echo gpaste not found 1>&2') \
+alias gp=$(
+	[[ -x `which gpaste-client 2>/dev/null` ]] && echo 'gpaste-client' || \
+	([[ -x `which gpaste 2>/dev/null` ]] && echo 'gpaste' || \
+		echo 'echo gpaste not found 1>&2')
 )
 
 # go "$1" levels up
 function ... {
 	local c=2
-	if [ $# -eq 0 ]; then
+	if (( $# == 0 )); then
 		: # it's okay, taking `...` as `... 2` (because `..` is `... 1`)
-	elif [ $# -ne 1 ]; then
+	elif (( $# != 1 )); then
 		echo 'incorrect arguments count' 1>&2
 		return 1
-	elif [ "$1" != "$[$1]" ]; then
+	elif [[ $1 != $[$1] ]]; then
 		echo 'incorrect go up level argument' 1>&2
 		return 1
 	else
-		c="$1"
+		c=$1
 	fi
 	local command='cd '
-	for i in $(seq $[$c]); do
+	for i in $(seq -- "$c"); do
 		command="${command}../"
 	done
 	$command
-	return $[$?]
+	return $?
 }
 
 # silent process in background
 function burp {
-	if [ $# -lt 1 ]; then
+	if (( $# < 1 )); then
 		echo 'not enough arguments to burp' 1>&2
 		return 1
 	fi
@@ -74,7 +74,7 @@ function burp {
 }
 
 function clean-vim {
-	if [ $# -ne 1 ]; then
+	if (( $# != 1 )); then
 		echo 'incorrect arguments count' 1>&2
 		echo 'target argument is required' 1>&2
 		return 1
@@ -92,7 +92,7 @@ function clean-vim {
 			find ~/.vim_backup/ -type f -name '*~' -exec rm {} \;
 			;;
 		*)
-			echo "unknown target argument: '$target'" 1>&2
+			printf 'unknown target argument: "%s"\n' "$target" 1>&2
 			return 1
 			;;
 	esac
@@ -101,32 +101,30 @@ function clean-vim {
 # prints last command as string
 function last-cmd {
 	local hist=$(history 2 | sed -e '$d')
-	local i=$[0]
-	local c=$(echo "$hist" | wc -l)
-	echo "$hist" | while read line; do
+	local i=0
+	local c=$(printf '%s\n' "$hist" | wc -l)
+	printf '%s\n' "$hist" | while read line; do
 		i=$[i+1]
-		if [ "$i" -eq 1 ]; then
-			line=$(echo "$line" | sed -e 's/^[ 0-9]\+[ ]\+//')
+		if (( $i == 1 )); then
+			line=$(printf '%s\n' "$line" | sed -e 's/^[ 0-9]\+[ ]\+//')
 		fi
-		if [ "$i" -eq "$c" ]; then
-			echo -n "$line"
+		if (( $i == $c )); then
+			printf '%s' "$line"
 		else
-			echo "$line"
+			printf '%s\n' "$line"
 		fi
 	done
 }
 
 # 'mkdir' and 'cd' to it
 function mkdircd {
-	mkdir "$@"
-	local n=$[$?]
-	[ $n -ne 0 ] && return $n
+	mkdir "$@" || return $?
 	local dir=
 	for arg in "$@"; do
-		[ "${arg:0:1}" != "-" ] && dir="$arg"
+		[[ ${arg:0:1} != '-' ]] && dir=$arg
 	done
-	if [ -n "$dir" ] && [ -d "$dir" ]; then
-		cd "$dir"
+	if [[ -n $dir && -d $dir ]]; then
+		cd -- "$dir"
 		return $?
 	fi
 }
