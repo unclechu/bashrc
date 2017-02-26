@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env perl
 #
 # Wrapper for hsc2hs to compile '*.hsc' to '*.hs' but writing result directly
 # to stdout instead of file.
@@ -7,65 +7,51 @@
 #
 # Useful for debugging in Vim (`:!hsc2hs-pipe`).
 #
-# TODO rewrite in perl
 
-fail() {
-	[ "$1" -ne 0 ] && exit $[$1]
+use v5.10; use strict; use warnings; use autodie qw(:all);
+
+use IPC::System::Simple qw(runx);
+use File::Temp ();
+
+# default values
+my $is_input_piped = 0;
+my $is_output_piped = 1;
+
+my @args_to_hsc2hs = ();
+foreach (@ARGV) {
+	if ($_ eq '--pipe-in') {$is_input_piped = 1}
+	elsif ($_ eq '--no-pipe-out') {$is_output_piped = 0}
+	elsif ($_ eq '-?' || $_ eq '-h' || $_ eq '--help') {
+		runx 'hsc2hs', '--help';
+		say '';
+		say '  --pipe-in      Read source from stdin';
+		say '  --no-pipe-out  Prevent writing output to stdout';
+		say '                 ("-o" or "--output" is required)';
+		exit 0;
+	} else {push @args_to_hsc2hs, $_}
 }
 
-is_input_piped=0
-is_output_piped=1
+# scoped here to prevent autoremoving temp file after condition ends
+my $tmp_input_fh;
 
-args=()
-for arg in "$@"; do
-	if [ "$arg" == "--pipe-in" ]; then
-		is_input_piped=1
-	elif [ "$arg" == "--no-pipe-out" ]; then
-		is_output_piped=0
-	elif [ "$arg" == "-?" -o "$arg" == "-h" -o "$arg" == "--help" ]; then
-		hsc2hs --help
-		retval=$[$?]
-		echo
-		echo '  --pipe-in      Read source from stdin'
-		echo '  --no-pipe-out  Prevent writing output to stdout'
-		echo '                 ("-o" or "--output" is required)'
-		exit $[$retval]
-	else
-		args+=("$arg")
-	fi
-done
+my $tmp_output_fh;
 
-if [ "$is_input_piped" -eq 1 ]; then
-
-	tmp_input_file=$(mktemp --suffix=.hsc)
-	fail "$?"
+if ($is_input_piped) {
+	$tmp_input_fh = File::Temp->new(SUFFIX => '.hsc');
 
 	# redirect stdin to temporary file
-	cat > "$tmp_input_file"
-	fail "$?"
+	print $tmp_input_fh <STDIN>;
 
-	# add temporary file name before all arguments
-	new_args=("$tmp_input_file")
-	new_args+=("${args[@]}")
-	args=("${new_args[@]}")
-fi
+	# add temporary file path before all arguments
+	unshift @args_to_hsc2hs, $tmp_input_fh->filename;
+}
 
-if [ "$is_output_piped" -eq 1 ]; then
-
-	tmp_output_file=$(mktemp --suffix=.hs)
-	fail "$?"
+if ($is_output_piped) {
+	$tmp_output_fh = File::Temp->new(SUFFIX => '.hs');
 
 	# append temporary output file argument to arguments list
-	args+=( '-o' "$tmp_output_file" )
-fi
+	push @args_to_hsc2hs, '-o', $tmp_output_fh->filename;
+}
 
-hsc2hs "${args[@]}"
-fail "$?"
-
-if [ "$is_output_piped" -eq 1 ]; then
-	cat "$tmp_output_file"
-	fail "$?"
-fi
-
-[ -n "$tmp_input_file"  ] && rm -f "$tmp_input_file"
-[ -n "$tmp_output_file" ] && rm -f "$tmp_output_file"
+runx 'hsc2hs', @args_to_hsc2hs;
+print <$tmp_output_fh> if defined $tmp_output_fh;
