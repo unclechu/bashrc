@@ -74,46 +74,53 @@ function burp {
 }
 
 function clean-vim {
-	if (( $# != 1 )); then
-		echo 'incorrect arguments count' 1>&2
-		echo 'target argument is required' 1>&2
-		return 1
-	fi
-	local target=$1
-	case "$target" in
-		swap)
-			find ~/.vim_swap/ -type f -name '*.sw*' -exec rm {} \;
-			;;
-		backup)
-			find ~/.vim_backup/ -type f -name '*~' -exec rm {} \;
-			;;
-		all)
-			find ~/.vim_swap/ -type f -name '*.sw*' -exec rm {} \;
-			find ~/.vim_backup/ -type f -name '*~' -exec rm {} \;
-			;;
-		*)
-			printf 'unknown target argument: "%s"\n' "$target" 1>&2
-			return 1
-			;;
-	esac
+	local program=$(
+cat << 'PERL'
+		use v5.10; use strict; use warnings; use autodie qw(:all);
+		use Env qw(HOME);
+		use List::Util qw(first);
+		use constant TARGET     => $ARGV[0];
+		use constant ARGC       => scalar(@ARGV);
+		use constant SWAP_DIR   => "$HOME/.vim_swap/";
+		use constant BACKUP_DIR => "$HOME/.vim_backup/";
+
+		sub get_help {'usage: clean-vim (swap|backup|all)'}
+
+		if (ARGC != 1) {
+			say STDERR 'incorrect arguments count: ', ARGC;
+			say STDERR 'target argument is required' if ARGC == 0;
+			say STDERR 'it should be only one argument' if ARGC > 1;
+			say STDERR get_help();
+			exit 1;
+		} elsif (TARGET eq 'help') {
+			say get_help();
+			exit 0;
+		} elsif (! defined(first {TARGET eq $_} qw(all swap backup))) {
+			say STDERR qq/unknown target argument: '@{[TARGET]}'/;
+			say STDERR get_help();
+			exit 1;
+		}
+
+		if ((TARGET eq 'all' || TARGET eq 'swap') && -d SWAP_DIR) {
+			my @files = glob SWAP_DIR . '/{,.}*.{swp,swo}';
+			foreach (@files) {unlink $_}
+		}
+
+		if ((TARGET eq 'all' || TARGET eq 'backup') && -d BACKUP_DIR) {
+			my @files = glob BACKUP_DIR . '/{,.}*~';
+			foreach (@files) {unlink $_}
+		}
+PERL
+	)
+	perl -e "$program" -- "$@"
+	return $?
 }
 
 # prints last command as string
 function last-cmd {
-	local hist=$(history 2 | sed -e '$d')
-	local i=0
-	local c=$(printf '%s\n' "$hist" | wc -l)
-	printf '%s\n' "$hist" | while read line; do
-		i=$[i+1]
-		if (( $i == 1 )); then
-			line=$(printf '%s\n' "$line" | sed -e 's/^[ 0-9]\+[ ]\+//')
-		fi
-		if (( $i == $c )); then
-			printf '%s' "$line"
-		else
-			printf '%s\n' "$line"
-		fi
-	done
+	local last=$(history 2 | sed -e '$d')
+	perl -e '$_ = shift; chomp; s/^[ 0-9]+[ ]+//; print' -- "$last"
+	return $?
 }
 
 # 'mkdir' and 'cd' to it

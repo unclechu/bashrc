@@ -7,6 +7,7 @@
 #
 # Useful for debugging in Vim (`:!hsc2hs-pipe`).
 #
+# TODO rewrite in perl
 
 fail() {
 	[ "$1" -ne 0 ] && exit $[$1]

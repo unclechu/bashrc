@@ -1,51 +1,61 @@
-#!/bin/bash
+#!/usr/bin/env perl
+use v5.10; use strict; use warnings; use autodie qw(:all);
 
-if [[ -z $TMUX ]]; then
-	echo 'This app cannot be used outside of tmux session' 1>&2
-	exit 1
-fi
+use Env qw(TMUX PWD);
+use Cwd qw(abs_path);
+use List::Util qw(first);
+use File::Basename qw(basename);
+use IPC::System::Simple qw(runx);
 
-if (( $# < 1 )); then
-	echo 'This app requires an argument' 1>&2
-	exit 1
-fi
+use constant CMDS => qw(help cd nocd);
 
-function show-help {
-	printf 'Usage: %s (cd)\n' "$(basename -- "$0")"
+if (! defined($TMUX) || -z $TMUX) {
+	say STDERR 'This app cannot be used outside of tmux session';
+	exit 1;
 }
 
-case "$1" in
-	help|-h|--help)
-		show-help
-		exit 0
-		;;
-	cd)
-		shift
-		if (( $# != 1 )); then
-			printf 'Incorrect arguments for tmuxsh-cd: "%s"\n' "$*" 1>&2
-			exit 1
-		fi
-		dir=$1
-		if [[ ! -d $dir ]]; then
-			printf 'Cannot change directory to "%s"' "$dir" 1>&2
-			printf ' becuase it does not exists\n' 1>&2
-			exit 1
-		fi
-		tmux setenv _TMUX_CD "$dir"
-		exit $?
-		;;
-	nocd)
-		shift
-		if (( $# != 0 )); then
-			printf 'Incorrect arguments for tmuxsh-nocd: "%s"\n' "$*" 1>&2
-			exit 1
-		fi
-		tmux setenv _TMUX_CD ''
-		exit $?
-		;;
-	*)
-		printf 'Unknown command "%s"\n' "$1" 1>&2
-		show-help 1>&2
-		exit 1
-		;;
-esac
+sub get_usage {"Usage: @{[basename $0]} (@{[join '|', CMDS]})"}
+
+if (scalar(@ARGV) < 1) {
+	say STDERR 'This app requires an argument';
+	say STDERR get_usage;
+	exit 1;
+}
+
+my $cmd = shift;
+
+sub unknown_cmd {
+	say STDERR qq/Unknown command "$cmd"/;
+	say STDERR get_usage;
+	exit 1;
+}
+
+unknown_cmd if ! defined(first {$cmd eq $_} CMDS);
+
+sub wrong_cmd_args {
+	my $app = basename $0;
+	say STDERR qq/Incorrect arguments for `$app $cmd`: "@{[join ' ', @ARGV]}"/;
+	say STDERR "Usage: $app $cmd " . join(' ', @_);
+	exit 1;
+}
+
+if ($cmd eq 'help') {
+	say get_usage;
+
+} elsif ($cmd eq 'cd') {
+
+	wrong_cmd_args 'DIRECTORY' if scalar(@ARGV) != 1;
+	my $dir = abs_path shift;
+
+	if (! -d $dir) {
+		say STDERR qq/Cannot change directory to "$dir" becuase it doesn't exists/;
+		exit 1;
+	}
+
+	runx qw(tmux setenv _TMUX_CD), $dir;
+
+} elsif ($cmd eq 'nocd') {
+	wrong_cmd_args if scalar(@ARGV) != 0;
+	runx qw(tmux setenv _TMUX_CD), '';
+
+} else {unknown_cmd}
