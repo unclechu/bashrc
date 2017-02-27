@@ -79,6 +79,7 @@ cat << 'PERL'
 		use v5.10; use strict; use warnings; use autodie qw(:all);
 		use Env qw(HOME);
 		use List::Util qw(first);
+		use File::Glob qw(:bsd_glob);
 		use constant TARGET     => $ARGV[0];
 		use constant ARGC       => scalar(@ARGV);
 		use constant SWAP_DIR   => "$HOME/.vim_swap/";
@@ -102,13 +103,13 @@ cat << 'PERL'
 		}
 
 		if ((TARGET eq 'all' || TARGET eq 'swap') && -d SWAP_DIR) {
-			my @files = glob SWAP_DIR . '/{,.}*.{swp,swo}';
-			foreach (@files) {unlink $_}
+			chdir SWAP_DIR;
+			unlink <{,.}*.{swp,swo}>;
 		}
 
 		if ((TARGET eq 'all' || TARGET eq 'backup') && -d BACKUP_DIR) {
-			my @files = glob BACKUP_DIR . '/{,.}*~';
-			foreach (@files) {unlink $_}
+			chdir BACKUP_DIR;
+			unlink <{,.}*~>;
 		}
 PERL
 	)

@@ -1,17 +1,7 @@
-#!/bin/bash
-# TODO rewrite in perl
+#!/usr/bin/env perl
+use v5.10; use strict; use warnings;
 
-__MY_BASHRC_CONFIGS_DIR="$(dirname "`readlink -f "${BASH_SOURCE[0]}"`")/.."
-
-. "$__MY_BASHRC_CONFIGS_DIR/utils/colors.sh"
-
-if [ -z "$CONFIGS_PATH" ]; then
-	CONFIGS_PATH="$HOME/.config/git-repos"
-fi
-
-action=pull
-
-usage="
+use constant USAGE => '
 USAGE
 =====
 
@@ -23,81 +13,87 @@ USAGE
 
 -u, --upload
 	git push
-"
+';
 
-fail_pre="$(_tput setab 1)$(_tput setaf 7)[X]$(_tput sgr0)"
-fail_post="$(_tput setab 1)$(_tput setaf 7)failed!$(_tput sgr0)"
+use autodie qw(:all);
+no autodie 'system';
 
+use Cwd qw(abs_path);
+use Env qw(HOME CONFIGS_PATH);
+use IPC::System::Simple qw(capturex);
+use Term::ANSIColor qw(:constants);
+use File::Glob qw(:bsd_glob);
 
-for i in "$@"; do
-	case "$i" in
-		-h|--help)
-			echo "$usage"
-			return 0
-			;;
-		-d|--download)
-			action=pull
-			;;
-		-u|--upload)
-			action=push
-			;;
-		*)
-			echo "Unknown argument \"$i\"" 1>&2
-			echo "$usage"
-			return 1
-			;;
-	esac
-done
+$CONFIGS_PATH = "$HOME/.config/git-repos"
+	if ! defined($CONFIGS_PATH) || $CONFIGS_PATH eq '';
 
-if [ ! -d "$CONFIGS_PATH" ]; then
-	echo "$(_tput setab 1)$(_tput setaf 7 \
-		)Git-configs directory \"$CONFIGS_PATH\"" \
-		"is not exist$(_tput sgr0)" 1>&2
-	return 1
-fi
+$CONFIGS_PATH = abs_path $CONFIGS_PATH;
 
-list=$(ls -A "$CONFIGS_PATH")
-if [ $? -ne 0 ]; then
-	echo "$(_tput setab 1)$(_tput setaf 7 \
-		)List directory \"$CONFIGS_PATH\" error$(_tput sgr0)" 1>&2
-	return 1
-fi
+my $action = 'pull'; # default value
 
-for line in $list; do
-	path="$CONFIGS_PATH/$line"
-	[ ! -d "$path" ] && continue # if list item is not a directory
-	( # private scope of 'cd'
-		cd "$path"
+foreach (@ARGV) {
+	if ($_ eq '-h' || $_ eq '--help') {say USAGE; exit 0}
+	elsif ($_ eq '-d' || $_ eq '--download') {$action = 'pull'}
+	elsif ($_ eq '-u' || $_ eq '--upload') {$action = 'push'}
+	else {say STDERR qq/Unknown argument "$_"/; say STDERR USAGE; exit 1}
+}
 
-		line="$(_tput setaf 3)${line}$(_tput sgr0)"
-		sfx="for \"$line\""
+sub err {BOLD, WHITE, ON_RED, @_, RESET}
+sub unit {YELLOW, @_, RESET}
+sub action {CYAN, @_, RESET}
+sub subaction {MAGENTA, @_, RESET}
+sub notice {BLACK, ON_WHITE, @_, RESET}
 
-		if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
-			echo "Git repo \"$line\"" \
-				"$(_tput setab 1)$(_tput setaf 7 \
-					)have something to commit$(_tput sgr0)" \
-				"$(_tput setab 7)$(_tput setaf 8 \
-					)(skipped $action)$(_tput sgr0)" 1>&2
-			continue
-		fi
+sub fail {err('[X]'), ' ', @_, ' ', err('failed!')}
 
-		title="$(_tput setaf 6)Git ${action}$(_tput sgr0)"
-		echo "$title $sfx repo"
-		git "$action"
-		[ $? -ne 0 ] && echo "$fail_pre $title $sfx $fail_post" 1>&2
+if (! -d $CONFIGS_PATH) {
+	say STDERR err qq/Git-configs directory "$CONFIGS_PATH" doesn't exist/;
+	exit 1;
+}
 
-		title="$(_tput setaf 5)Updating git submodules$(_tput sgr0)"
-		echo "$title $sfx repo"
-		git submodule update --init
-		[ $? -ne 0 ] && echo "$fail_pre $title $sfx $fail_post" 1>&2
-		git submodule update
-		[ $? -ne 0 ] && echo "$fail_pre $title $sfx $fail_post" 1>&2
+chdir $CONFIGS_PATH;
 
-		if [ -f Makefile ]; then
-			title="$(_tput setaf 5)Building by 'make' tool$(_tput sgr0)"
-			echo "$title $sfx repo"
-			make --always-make
-			[ $? -ne 0 ] && echo "$fail_pre $title $sfx $fail_post" 1>&2
-		fi
-	)
-done
+my $unit;
+my $full_path;
+my $fork_pid;
+
+while ($unit = <*>) {
+	$full_path = "$CONFIGS_PATH/$unit";
+	next if ! -d $full_path; # ignore if it's not a directory
+	last if ($fork_pid = fork) == 0; # end loop for child process
+	if (wait && $? != 0) {say err '[ NOT DONE ]'; exit 1}
+}
+
+# if it's main process
+if ($fork_pid != 0) {
+	say BOLD, WHITE, ON_GREEN, '[ DONE ]', RESET;
+	exit 0;
+}
+
+chdir $full_path;
+
+my @t;
+my @t_unit = unit $unit;
+my @t_for_unit = ('for "', @t_unit, '"');
+
+if (capturex(qw/git status --porcelain/) ne '') {
+	say STDERR 'Git repo "', @t_unit, '" ',
+		err('have something to commit'), ' ',
+		notice("(skipped $action)");
+	exit 0;
+}
+
+sub title_it {@t = (@_, ' ', @t_for_unit); say @t, ' repo'}
+sub notifail {say STDERR fail @t}
+
+title_it action "Git $action";
+notifail if system('git', $action) != 0;
+
+title_it subaction 'Updating git submodules';
+notifail if system(qw(git submodule update --init)) != 0;
+notifail if system(qw(git submodule update)) != 0;
+
+if (-f 'Makefile') {
+	title_it subaction 'Building by "make" tool';
+	notifail if system(qw(make --always-make)) != 0;
+}
