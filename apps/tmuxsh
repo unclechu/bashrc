@@ -1,13 +1,13 @@
 #!/usr/bin/env perl
 use v5.10; use strict; use warnings; use autodie qw(:all);
 
-use Env qw(TMUX PWD);
+use Env qw(HOME TMUX PWD);
 use Cwd qw(abs_path);
 use List::Util qw(first);
 use File::Basename qw(basename);
 use IPC::System::Simple qw(runx);
 
-use constant CMDS => qw(help cd nocd);
+use constant CMDS => qw(help cd nocd reconf colors);
 
 if (! defined($TMUX) || -z $TMUX) {
 	say STDERR 'This app cannot be used outside of tmux session';
@@ -30,7 +30,7 @@ sub unknown_cmd {
 	exit 1;
 }
 
-unknown_cmd if ! defined(first {$cmd eq $_} CMDS);
+unknown_cmd if ! defined (first {$cmd eq $_} CMDS);
 
 sub wrong_cmd_args {
 	my $app = basename $0;
@@ -57,5 +57,18 @@ if ($cmd eq 'help') {
 } elsif ($cmd eq 'nocd') {
 	wrong_cmd_args if scalar(@ARGV) != 0;
 	runx qw(tmux setenv _TMUX_CD), '';
+
+} elsif ($cmd eq 'reconf') {
+	runx qw(tmux source --), "$HOME/.tmux.conf";
+
+} elsif ($cmd eq 'colors') {
+
+	my $usage = '(dark|light)';
+	wrong_cmd_args $usage if scalar(@ARGV) != 1;
+	wrong_cmd_args $usage if $ARGV[0] ne 'dark' && $ARGV[0] ne 'light';
+	my $colors = shift;
+
+	runx qw(tmux setenv _TMUX_COLORS), $colors;
+	runx qw(tmux source --), "$HOME/.tmux.conf";
 
 } else {unknown_cmd}

@@ -28,10 +28,6 @@ alias gitco='git checkout'
 alias gitpl='git pull origin `gitb`'
 alias gitph='git push origin `gitb`'
 
-# specific colorscheme for tmux
-alias tmuxdc='env _TMUX_COLOR=dark  tmux'
-alias tmuxlc='env _TMUX_COLOR=light tmux'
-
 # shortcut for gpaste cli
 alias gp=$(
 	[[ -x `which gpaste-client 2>/dev/null` ]] && echo 'gpaste-client' || \
