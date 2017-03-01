@@ -28,6 +28,8 @@ alias gitco='git checkout'
 alias gitpl='git pull origin `gitb`'
 alias gitph='git push origin `gitb`'
 
+alias tmuxs=$'printf \'/tmp/%s-tmux-%s\' "`whoami`" '
+
 # shortcut for gpaste cli
 alias gp=$(
 	[[ -x `which gpaste-client 2>/dev/null` ]] && echo 'gpaste-client' || \
