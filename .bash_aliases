@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # .bash_aliases
 
 shopt -s expand_aliases

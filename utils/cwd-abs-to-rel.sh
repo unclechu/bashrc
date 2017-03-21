@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # chdir from absolute path to relative
 function cwd-abs-to-rel {

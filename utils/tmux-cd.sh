@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if [[ -n $TMUX ]]; then
 	__tmux_cd=$(tmux showenv _TMUX_CD 2>/dev/null)
