@@ -95,5 +95,5 @@ notifail if system(qw/git submodule update/) != 0;
 
 if (-f 'Makefile') {
 	title_it subaction 'Building by "make" tool';
-	notifail if system(qw/make --always-make/) != 0;
+	notifail if system(qw/make -B/) != 0;
 }

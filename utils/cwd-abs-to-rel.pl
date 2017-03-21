@@ -9,6 +9,7 @@ my @masks = (
 	qr[^/media/$USER/([0-9A-Za-z_-]+)/home/$USER(/|$)],
 	qr[^/media/([0-9A-Za-z_-]+)/home/$USER/(/|$)],
 	qr[^/mnt/([0-9A-Za-z_-]+)/home/$USER(/|$)],
+	qr[^/usr/home/$USER(/|$)],
 );
 
 sub same_dir { -d $_[0] && stat($PWD)->ino == stat($_[0])->ino };
