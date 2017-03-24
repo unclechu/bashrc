@@ -11,11 +11,17 @@ BEGIN {
 	@ARGV = ();
 }
 
+# Wrapper for coloring special symbols
+# to prevent bash from calculating
+# line length including these symbols.
+sub c {'\[' . shift . '\]'}
+
 # Removes coloring from string.
 # Useful to count string length.
 sub text {
 	local $_ = $_[0] if defined $_[0];
-	s/\x1b\[[0-9;]*m//g;
+	# s/\x1b\[[0-9;]*m//g;
+	s/\\\[\x1b\[[0-9;]*m\\\]//g; # for symbols wrapped by `c` subroutine
 	$_;
 }
 
@@ -64,7 +70,7 @@ my $pwd_view =
 
 # Detecting remote mount point
 my $remote_view = (compose \&nullout, \&nullerr)->(sub {
-	my $remote_view = " (@{[RED]}remote@{[RESET]})";
+	my $remote_view = " (@{[c RED]}remote@{[c RESET]})";
 	$_ = `df -l -T -- $PWD`;
 	return $remote_view if $? == 1; # works on gnu/linux
 	@_ = split "\n", $_;
@@ -74,15 +80,15 @@ my $remote_view = (compose \&nullout, \&nullerr)->(sub {
 });
 
 my $pyvenv_view = (! $VIRTUAL_ENV) ? '' : sprintf '(pyvenv: %s) ',
-	MAGENTA . basename($VIRTUAL_ENV, dirname $VIRTUAL_ENV) . RESET;
+	c(MAGENTA) . basename($VIRTUAL_ENV, dirname $VIRTUAL_ENV) . c(RESET);
 
-my $permission_color = ($UID == 0) ? RED : GREEN;
-my $permission_mark = $permission_color . (($UID == 0) ? '#' : '$') . RESET;
+my $permission_color = ($UID == 0) ? c(RED) : c(GREEN);
+my $permission_mark = $permission_color . (($UID == 0) ? '#' : '$') . c(RESET);
 
 sub get_ps1 {
-	$pyvenv_view . $permission_color . $USER . RESET .
-		'@' . YELLOW . $LOCAL_HOSTNAME . RESET .
-		':' . BLUE . $pwd_view . RESET .  $remote_view;
+	$pyvenv_view . $permission_color . $USER . c(RESET) .
+		'@' . c(YELLOW) . $LOCAL_HOSTNAME . c(RESET) .
+		':' . c(BLUE) . $pwd_view . c(RESET) .  $remote_view;
 }
 
 my $ps1 = get_ps1;
@@ -101,9 +107,6 @@ if ($ps1_len > $COLUMNS) {
 	$ps1 = get_ps1;
 	$ps1_len = length text $ps1;
 }
-
-# TODO FIXME colors adds buggy cursor shift when listing history
-$permission_mark = text $permission_mark;
 
 my $till_eol_cols = $COLUMNS - $ps1_len - 1;
 $till_eol_cols = 0 if $till_eol_cols < 0;

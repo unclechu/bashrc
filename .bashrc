@@ -75,6 +75,7 @@ function __perl {
 		-e 'use Term::ANSIColor qw(:constants);' \
 		-e 'use IPC::System::Simple qw(capturex);' \
 		-e 'use constant UID => (getpwnam $USER)[2];' \
+		-e 'sub c {q<\[> . shift . q<\]>}' \
 		"$@"
 }
 
@@ -83,12 +84,8 @@ __UID=`id -u`
 # permission symbol
 __perm_symbol=
 case "$__UID" in
-	# TODO FIXME colors adds buggy cursor shift when listing history
-	# 0) __perm_symbol=$(__perl -e 'print RED,   q{#}, RESET') ;;
-	# *) __perm_symbol=$(__perl -e 'print GREEN, q{$}, RESET') ;;
-	# TODO remove this temporary solution
-	0) __perm_symbol='#' ;;
-	*) __perm_symbol='$' ;;
+	0) __perm_symbol=$(__perl -e 'print c(RED),   q{#}, c(RESET)') ;;
+	*) __perm_symbol=$(__perl -e 'print c(GREEN), q{$}, c(RESET)') ;;
 esac
 
 function prompt_command {
@@ -105,20 +102,11 @@ function prompt_command {
 # set prompt command (title update and color prompt)
 PROMPT_COMMAND=prompt_command
 # set new b/w prompt (will be overwritten in 'prompt_command' later)
-# TODO FIXME colors adds buggy cursor shift when listing history
-# PS1=$(__perl \
-# 	-e 'BEGIN { $HOSTNAME=$ARGV[0]; $__perm_symbol=$ARGV[1]; @ARGV=() };' \
-# 	-e 'print (((UID == 0) ? RED : GREEN), q{\u}, RESET);' \
-# 	-e 'print q{@}, YELLOW, $HOSTNAME, RESET, q{:};' \
-# 	-e 'print BLUE, q{\w}, RESET, q{\n}, $__perm_symbol, q{ };' \
-# 	-- "$LOCAL_HOSTNAME" "$__perm_symbol"
-# )
-# TODO remove this temporary solution
 PS1=$(__perl \
 	-e 'BEGIN { $HOSTNAME=$ARGV[0]; $__perm_symbol=$ARGV[1]; @ARGV=() };' \
-	-e 'print (((UID == 0) ? RED : GREEN), q{\u}, RESET);' \
-	-e 'print q{@}, YELLOW, $HOSTNAME, RESET, q{:};' \
-	-e 'print BLUE, q{\w}, RESET, q{\n}, $__perm_symbol, q{ };' \
+	-e 'print (((UID == 0) ? c(RED) : c(GREEN)), q{\u}, c(RESET));' \
+	-e 'print q{@}, c(YELLOW), $HOSTNAME, c(RESET), q{:};' \
+	-e 'print c(BLUE), q{\w}, c(RESET), q{\n}, $__perm_symbol, q{ };' \
 	-- "$LOCAL_HOSTNAME" "$__perm_symbol"
 )
 
