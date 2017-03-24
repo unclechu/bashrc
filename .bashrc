@@ -60,6 +60,8 @@ __MY_BASHRC_CONFIGS_DIR=$(dirname -- "`readlink -f -- "${BASH_SOURCE[0]}"`")
 . "$__MY_BASHRC_CONFIGS_DIR/utils/tmux-cd.sh"
 . "$__MY_BASHRC_CONFIGS_DIR/utils/cwd-abs-to-rel.sh"
 
+__PERL_PROMPT_CMD=$(cat -- "$__MY_BASHRC_CONFIGS_DIR/utils/prompt-cmd.pl")
+
 cwd-abs-to-rel
 
 if [[ -f ~/.hostname ]]; then
@@ -68,81 +70,47 @@ else
 	LOCAL_HOSTNAME=$HOSTNAME
 fi
 
+function __perl {
+	perl \
+		-e 'use v5.10;' \
+		-e 'use Env qw(USER);' \
+		-e 'use Term::ANSIColor qw(:constants);' \
+		-e 'use IPC::System::Simple qw(capturex);' \
+		-e 'use constant UID => (getpwnam $USER)[2];' \
+		"$@"
+}
+
+__UID=`id -u`
+
 # permission symbol
-perm_symbol=
-case "`id -u`" in
-	0) perm_symbol="${color_red}#${color_off}"    ;;
-	*) perm_symbol="${color_green}\$${color_off}" ;;
+__perm_symbol=
+case "$__UID" in
+	0) __perm_symbol=$(__perl -e 'print RED,   q{#}, RESET') ;;
+	*) __perm_symbol=$(__perl -e 'print GREEN, q{$}, RESET') ;;
 esac
 
+
 function prompt_command {
-	local pwdname=$PWD
-	local remote=false
-	local ps1_remote=
-	local pyvenv_name=
-	local pyvenv_chars=
 
-	# beautify working directory name
-	if [[ $HOME == $PWD ]]; then
-		pwdname='~'
-	elif [[ $HOME == ${PWD:0:${#HOME}} ]]; then
-		pwdname="~${PWD:${#HOME}}"
-	fi
-
-	# detect remote mount
-	df -l -- "$PWD" 1>/dev/null 2>/dev/null
-	if (( $? == 1 )); then
-		remote=true
-		ps1_remote=" (remote)"
-	fi
-
-	if [[ -n $VIRTUAL_ENV ]]; then
-		pyvenv_name=$(basename -- "$VIRTUAL_ENV" "$(dirname -- "$VIRTUAL_ENV")")
-		pyvenv_chars="(pyvenv: $pyvenv_name) "
-		pyvenv_name="(pyvenv: ${color_purple}${pyvenv_name}${color_off}) "
-	fi
-
-	# calculate prompt length
-	local ps1_length=$((${#pyvenv_chars}+${#USER}+
-		${#LOCAL_HOSTNAME}+${#pwdname}+${#ps1_remote}+3))
-	local fill=
-
-	# if length is greater, than terminal width
-	if (( $ps1_length > $COLUMNS )); then
-		# strip working directory name
-		pwdname="...${pwdname:$(($ps1_length-$COLUMNS+3))}"
-	else
-		# else calculate fillsize
-		local fillsize=$(($COLUMNS - $ps1_length))
-		fill=$color_white
-		while (( $fillsize > 0 )); do
-			fill="${fill}─"
-			fillsize=$(($fillsize - 1))
-		done
-		fill="${fill}${color_off}"
-	fi
-
-	if [[ $color_is_on == true && $remote == true ]]; then
-		ps1_remote=" (${color_red}remote${color_off})"
-	fi
-
-	# set new color prompt
-	PS1="${pyvenv_name}${color_user}${USER}${color_off}"
-	PS1="${PS1}@${color_yellow}${LOCAL_HOSTNAME}${color_off}"
-	PS1="${PS1}:${color_blue}${pwdname}${color_off}"
-	PS1="${PS1}${ps1_remote}"
-	PS1="${PS1} ${fill}\n${perm_symbol} "
+	PS1=$(
+		perl -e "$__PERL_PROMPT_CMD" -- \
+			"$USER" "$__UID" "$HOME" "$PWD" \
+			"$LOCAL_HOSTNAME" "$VIRTUAL_ENV" "$COLUMNS"
+	)
 
 	[[ -n $VTE_VERSION ]] && __custom_vte_prompt_command
 }
 
 # set prompt command (title update and color prompt)
 PROMPT_COMMAND=prompt_command
-# set new b/w prompt (will be overwritten in 'prompt_command' later for color prompt)
-PS1="${color_user}\u${color_off}"
-PS1="${PS1}@${color_yellow}${LOCAL_HOSTNAME}${color_off}:"
-PS1="${PS1}${color_blue}\w${color_off}\n"
-PS1="${PS1}${perm_symbol} "
+# set new b/w prompt (will be overwritten in 'prompt_command' later)
+PS1=$(__perl \
+	-e 'BEGIN { $HOSTNAME=$ARGV[0]; $__perm_symbol=$ARGV[1]; @ARGV=() };' \
+	-e 'print (((UID == 0) ? RED : GREEN), q{\u}, RESET);' \
+	-e 'print q{@}, YELLOW, $HOSTNAME, RESET, q{:};' \
+	-e 'print BLUE, q{\w}, RESET, q{\n}, $__perm_symbol, q{ };' \
+	-- "$LOCAL_HOSTNAME" "$__perm_symbol"
+)
 
 # Postgres won't work without this
 export PGHOST=/tmp
@@ -174,4 +142,4 @@ fi
 
 [[ -f ~/.bash_aliases ]] && . ~/.bash_aliases
 
-# vim: set noet :
+# vim: set noet cc=81 tw=80 :
