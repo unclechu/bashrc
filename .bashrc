@@ -24,7 +24,6 @@ if [[ -n $VTE_VERSION ]]; then
 				-- "$__term_name_prefix"
 	}
 
-	# support colors
 	export TERM=xterm-256color
 fi
 
@@ -56,7 +55,6 @@ shopt -s autocd
 
 __MY_BASHRC_CONFIGS_DIR=$(dirname -- "`readlink -f -- "${BASH_SOURCE[0]}"`")
 
-. "$__MY_BASHRC_CONFIGS_DIR/utils/colors.sh"
 . "$__MY_BASHRC_CONFIGS_DIR/utils/tmux-cd.sh"
 . "$__MY_BASHRC_CONFIGS_DIR/utils/cwd-abs-to-rel.sh"
 
