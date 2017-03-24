@@ -102,6 +102,9 @@ if ($ps1_len > $COLUMNS) {
 	$ps1_len = length text $ps1;
 }
 
+# TODO FIXME colors adds buggy cursor shift when listing history
+$permission_mark = text $permission_mark;
+
 my $till_eol_cols = $COLUMNS - $ps1_len - 1;
 $till_eol_cols = 0 if $till_eol_cols < 0;
 $ps1 .= ' 'x($till_eol_cols > 0) . '─'x$till_eol_cols . "\n$permission_mark ";
