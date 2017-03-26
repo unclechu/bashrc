@@ -25,6 +25,10 @@ if [[ -n $VTE_VERSION ]]; then
 	}
 
 	export TERM=xterm-256color
+
+elif env | grep '^KONSOLE_' 0</dev/null 1>/dev/null; then
+
+	export TERM=xterm-256color
 fi
 
 if which nvim 0</dev/null 1>/dev/null 2>/dev/null; then
@@ -81,13 +85,6 @@ function __perl {
 
 __UID=`id -u`
 
-# permission symbol
-__perm_symbol=
-case "$__UID" in
-	0) __perm_symbol=$(__perl -e 'print c(RED),   q{#}, c(RESET)') ;;
-	*) __perm_symbol=$(__perl -e 'print c(GREEN), q{$}, c(RESET)') ;;
-esac
-
 function prompt_command {
 
 	PS1=$(
@@ -101,6 +98,14 @@ function prompt_command {
 
 # set prompt command (title update and color prompt)
 PROMPT_COMMAND=prompt_command
+
+# permission symbol
+__perm_symbol=
+case "$__UID" in
+	0) __perm_symbol=$(__perl -e 'print c(RED),   q{#}, c(RESET)') ;;
+	*) __perm_symbol=$(__perl -e 'print c(GREEN), q{$}, c(RESET)') ;;
+esac
+
 # set new b/w prompt (will be overwritten in 'prompt_command' later)
 PS1=$(__perl \
 	-e 'BEGIN { $HOSTNAME=$ARGV[0]; $__perm_symbol=$ARGV[1]; @ARGV=() };' \
