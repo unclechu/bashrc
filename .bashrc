@@ -26,7 +26,7 @@ if [[ -n $VTE_VERSION ]]; then
 
 	export TERM=xterm-256color
 
-elif env | grep '^KONSOLE_' 0</dev/null 1>/dev/null; then
+elif env | grep '^KONSOLE_' 1>/dev/null; then
 
 	export TERM=xterm-256color
 fi
