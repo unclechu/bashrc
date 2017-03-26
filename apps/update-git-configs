@@ -94,6 +94,7 @@ notifail if system(qw/git submodule update --init/) != 0;
 notifail if system(qw/git submodule update/) != 0;
 
 if (-f 'Makefile') {
-	title_it subaction 'Building by "make" tool';
-	notifail if system(qw/make -B/) != 0;
+	my $make_bin = (capturex(qw<uname -o>) =~ /FreeBSD/) ? 'gmake' : 'make';
+	title_it subaction "Building by '$make_bin' tool";
+	notifail if system($make_bin, '--always-make') != 0;
 }
