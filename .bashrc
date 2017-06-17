@@ -132,6 +132,16 @@ function _burp_completion {
 }
 complete -F _burp_completion -o default burp
 
+# pip bash completion start
+_pip_completion()
+{
+    COMPREPLY=( $( COMP_WORDS="${COMP_WORDS[*]}" \
+                   COMP_CWORD=$COMP_CWORD \
+                   PIP_AUTO_COMPLETE=1 $1 ) )
+}
+complete -o default -F _pip_completion pip
+# pip bash completion end
+
 if [[ -z $_JAVA_OPTIONS ]]; then
 	export _JAVA_OPTIONS='
 		-Dawt.useSystemAAFontSettings=on
