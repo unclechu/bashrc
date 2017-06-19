@@ -1,15 +1,8 @@
+#!/usr/bin/env perl
 use v5.10; use strict; use warnings;
 use Term::ANSIColor qw<:constants>;
 use File::Basename qw<basename dirname>;
 use File::Spec qw<devnull>;
-
-my $USER, my $UID, my $HOME, my $PWD;
-my $LOCAL_HOSTNAME, my $VIRTUAL_ENV, my $COLUMNS;
-
-BEGIN {
-	($USER, $UID, $HOME, $PWD, $LOCAL_HOSTNAME, $VIRTUAL_ENV, $COLUMNS) = @ARGV;
-	@ARGV = ();
-}
 
 # Wrapper for coloring special symbols
 # to prevent bash from calculating
@@ -62,56 +55,82 @@ sub compose {
 	sub {$chain->(shift)}
 }
 
-# Replacing $HOME in path with tilda
-my $pwd_view =
-	($PWD eq $HOME) ? '~' :
-	($PWD =~ /^$HOME/) ? '~' . substr($PWD, length $HOME) :
-	$PWD;
-
-# Detecting remote mount point
-my $remote_view = (compose \&nullout, \&nullerr)->(sub {
-	my $remote_view = " (@{[c RED]}remote@{[c RESET]})";
-	$_ = `df -l -T -- $PWD`;
-	return $remote_view if $? == 1; # works on gnu/linux
-	@_ = split "\n", $_;
-	@_ = split / +/, $_[1];
-	return $remote_view if $_[1] =~ /^fusefs(\.|$)/; # works on freebsd
-	'';
-});
-
-my $pyvenv_view = (! $VIRTUAL_ENV) ? '' : sprintf '(pyvenv: %s) ',
-	c(MAGENTA) . basename($VIRTUAL_ENV, dirname $VIRTUAL_ENV) . c(RESET);
-
-my $permission_color = ($UID == 0) ? c(RED) : c(GREEN);
-my $permission_mark = $permission_color . (($UID == 0) ? '#' : '$') . c(RESET);
-
 sub get_ps1 {
-	$pyvenv_view . $permission_color . $USER . c(RESET) .
-		'@' . c(YELLOW) . $LOCAL_HOSTNAME . c(RESET) .
-		':' . c(BLUE) . $pwd_view . c(RESET) .  $remote_view;
+
+	chomp(my $USER           = <>);
+	chomp(my $UID            = <>);
+	chomp(my $HOME           = <>);
+	chomp(my $PWD            = <>);
+	chomp(my $LOCAL_HOSTNAME = <>);
+	chomp(my $VIRTUAL_ENV    = <>);
+	chomp(my $COLUMNS        = <>);
+
+	# Replacing $HOME in path with tilda
+	my $pwd_view =
+		($PWD eq $HOME) ? '~' :
+		($PWD =~ /^$HOME/) ? '~' . substr($PWD, length $HOME) :
+		$PWD;
+
+	# Detecting remote mount point
+	my $remote_view = (compose \&nullout, \&nullerr)->(sub {
+		my $remote_view = " (@{[c RED]}remote@{[c RESET]})";
+		$_ = `df -l -T -- $PWD`;
+		return $remote_view if $? == 1; # works on gnu/linux
+		@_ = split "\n", $_;
+		@_ = split / +/, $_[1];
+		return $remote_view if $_[1] =~ /^fusefs(\.|$)/; # works on freebsd
+		'';
+	});
+
+	my $pyvenv_view = (! $VIRTUAL_ENV) ? '' : sprintf '(pyvenv: %s) ',
+		c(MAGENTA) . basename($VIRTUAL_ENV, dirname $VIRTUAL_ENV) . c(RESET);
+
+	my $permission_color = ($UID == 0) ? c(RED) : c(GREEN);
+
+	my $permission_mark =
+		$permission_color . (($UID == 0) ? '#' : '$') . c(RESET);
+
+	my $init_ps1 = sub {
+		$pyvenv_view . $permission_color . $USER . c(RESET) .
+			'@' . c(YELLOW) . $LOCAL_HOSTNAME . c(RESET) .
+			':' . c(BLUE) . $pwd_view . c(RESET) . $remote_view;
+	};
+
+	my $ps1 = $init_ps1->();
+	my $ps1_len = length text $ps1;
+
+	if ($ps1_len > $COLUMNS) {
+		my $min = 16;
+		my $pwd_chars_count = $ps1_len - $COLUMNS + 1;
+		my $diff = length(text $pwd_view) - $pwd_chars_count;
+		$pwd_chars_count += $diff - $min if $diff < $min;
+
+		$pwd_view =
+			'…'x(length(text $pwd_view) > $min) .
+			substr $pwd_view, $pwd_chars_count;
+
+		$ps1 = $init_ps1->();
+		$ps1_len = length text $ps1;
+	}
+
+	my $till_eol_cols = $COLUMNS - $ps1_len - 1;
+	$till_eol_cols = 0 if $till_eol_cols < 0;
+
+	$ps1 .=
+		' 'x($till_eol_cols > 0) . '─'x$till_eol_cols . "\\n$permission_mark ";
+
+	$ps1;
 }
 
-my $ps1 = get_ps1;
-my $ps1_len = length text $ps1;
-
-if ($ps1_len > $COLUMNS) {
-	my $min = 16;
-	my $pwd_chars_count = $ps1_len - $COLUMNS + 1;
-	my $diff = length(text $pwd_view) - $pwd_chars_count;
-	$pwd_chars_count += $diff - $min if $diff < $min;
-
-	$pwd_view =
-		'…'x(length(text $pwd_view) > $min) .
-		substr $pwd_view, $pwd_chars_count;
-
-	$ps1 = get_ps1;
-	$ps1_len = length text $ps1;
+$|++;
+while (<>) {
+	chomp;
+	if ($_ eq 'get-ps1') {
+		say get_ps1;
+		say 'end-get-ps1';
+	} else {
+		die "Unknown request: '$_'";
+	}
 }
-
-my $till_eol_cols = $COLUMNS - $ps1_len - 1;
-$till_eol_cols = 0 if $till_eol_cols < 0;
-$ps1 .= ' 'x($till_eol_cols > 0) . '─'x$till_eol_cols . "\n$permission_mark ";
-
-print $ps1;
 
 # vim: set noet cc=81 tw=80 :

@@ -62,8 +62,6 @@ __MY_BASHRC_CONFIGS_DIR=$(dirname -- "`readlink -f -- "${BASH_SOURCE[0]}"`")
 . "$__MY_BASHRC_CONFIGS_DIR/utils/tmux-cd.sh"
 . "$__MY_BASHRC_CONFIGS_DIR/utils/cwd-abs-to-rel.sh"
 
-__PERL_PROMPT_CMD=$(cat -- "$__MY_BASHRC_CONFIGS_DIR/utils/prompt-cmd.pl")
-
 cwd-abs-to-rel
 
 if [[ -f ~/.hostname ]]; then
@@ -85,13 +83,28 @@ function __perl {
 
 __UID=`id -u`
 
+function __start_prompt_coproc {
+	kill -9 -- "$__PROMPT_COPROC_PID" 1>&- 2>&-
+	coproc __PROMPT_COPROC \
+		{ $__MY_BASHRC_CONFIGS_DIR/utils/prompt-cmd.pl; }
+}
+
+function __interrupt_handler { __start_prompt_coproc 2>&-; }
+trap __interrupt_handler INT
+__start_prompt_coproc
+
 function prompt_command {
 
-	PS1=$(
-		perl -e "$__PERL_PROMPT_CMD" -- \
-			"$USER" "$__UID" "$HOME" "$PWD" \
-			"$LOCAL_HOSTNAME" "$VIRTUAL_ENV" "$COLUMNS"
-	)
+	printf "%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n" 'get-ps1' \
+		"$USER" "$__UID" "$HOME" "$PWD" "$LOCAL_HOSTNAME" \
+		"$VIRTUAL_ENV" "$COLUMNS" >&${__PROMPT_COPROC[1]}
+
+	PS1=
+
+	while IFS= read -ru ${__PROMPT_COPROC[0]} x; do
+		[[ $x == 'end-get-ps1' ]] && break
+		PS1=$PS1$x
+	done
 
 	[[ -n $VTE_VERSION ]] && __custom_vte_prompt_command
 }
