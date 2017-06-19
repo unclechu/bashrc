@@ -83,15 +83,7 @@ function __perl {
 
 __UID=`id -u`
 
-function __start_prompt_coproc {
-	kill -9 -- "$__PROMPT_COPROC_PID" 1>&- 2>&-
-	coproc __PROMPT_COPROC \
-		{ $__MY_BASHRC_CONFIGS_DIR/utils/prompt-cmd.pl; }
-}
-
-function __interrupt_handler { __start_prompt_coproc 2>&-; }
-trap __interrupt_handler INT
-__start_prompt_coproc
+coproc __PROMPT_COPROC { $__MY_BASHRC_CONFIGS_DIR/utils/prompt-cmd.pl; }
 
 function prompt_command {
 

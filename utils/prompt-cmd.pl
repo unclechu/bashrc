@@ -4,6 +4,8 @@ use Term::ANSIColor qw<:constants>;
 use File::Basename qw<basename dirname>;
 use File::Spec qw<devnull>;
 
+$SIG{INT} = 'IGNORE';
+
 # Wrapper for coloring special symbols
 # to prevent bash from calculating
 # line length including these symbols.
