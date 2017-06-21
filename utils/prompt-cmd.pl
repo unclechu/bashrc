@@ -1,5 +1,8 @@
 #!/usr/bin/env perl
 use v5.10; use strict; use warnings;
+use feature 'unicode_strings';
+use utf8;
+use Encode qw<decode_utf8 encode_utf8>;
 use Term::ANSIColor qw<:constants>;
 use File::Basename qw<basename dirname>;
 use File::Spec qw<devnull>;
@@ -59,13 +62,13 @@ sub compose {
 
 sub get_ps1 {
 
-	chomp(my $USER           = <>);
-	chomp(my $UID            = <>);
-	chomp(my $HOME           = <>);
-	chomp(my $PWD            = <>);
-	chomp(my $LOCAL_HOSTNAME = <>);
-	chomp(my $VIRTUAL_ENV    = <>);
-	chomp(my $COLUMNS        = <>);
+	chomp(my $USER           = decode_utf8 <>);
+	chomp(my $UID            = decode_utf8 <>);
+	chomp(my $HOME           = decode_utf8 <>);
+	chomp(my $PWD            = decode_utf8 <>);
+	chomp(my $LOCAL_HOSTNAME = decode_utf8 <>);
+	chomp(my $VIRTUAL_ENV    = decode_utf8 <>);
+	chomp(my $COLUMNS        = decode_utf8 <>);
 
 	# Replacing $HOME in path with tilda
 	my $pwd_view =
@@ -121,7 +124,7 @@ sub get_ps1 {
 	$ps1 .=
 		' 'x($till_eol_cols > 0) . '─'x$till_eol_cols . "\\n$permission_mark ";
 
-	$ps1;
+	encode_utf8 $ps1;
 }
 
 $|++;
