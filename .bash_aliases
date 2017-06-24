@@ -38,7 +38,7 @@ alias gp=$(
 )
 
 # go "$1" levels up
-function ... {
+...() {
 	local c=2
 	if (( $# == 0 )); then
 		: # it's okay, taking `...` as `... 2` (because `..` is `... 1`)
@@ -60,7 +60,7 @@ function ... {
 }
 
 # silent process in background
-function burp {
+burp() {
 	if (( $# < 1 )); then
 		echo 'not enough arguments to burp' 1>&2
 		return 1
@@ -72,14 +72,14 @@ function burp {
 }
 
 # prints last command as string
-function last-cmd {
+last-cmd() {
 	local last=$(history 2 | sed -e '$d')
 	perl -e '$_ = shift; chomp; s/^[ 0-9]+[ ]+//; print' -- "$last"
 	return $?
 }
 
 # 'mkdir' and 'cd' to it
-function mkdircd {
+mkdircd() {
 	mkdir "$@" || return $?
 	local dir=
 	for arg in "$@"; do

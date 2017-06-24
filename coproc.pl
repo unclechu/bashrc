@@ -3,16 +3,18 @@ use v5.10; use strict; use warnings;
 use feature 'unicode_strings';
 use utf8;
 use Encode qw<decode_utf8 encode_utf8>;
-use Term::ANSIColor qw<:constants>;
-use File::Basename qw<basename dirname>;
+use File::stat qw(stat);
 use File::Spec qw<devnull>;
+use File::Basename qw<basename dirname>;
+use Term::ANSIColor qw<:constants>;
 
 $SIG{INT} = 'IGNORE';
+$|++;
 
 # Wrapper for coloring special symbols
 # to prevent bash from calculating
 # line length including these symbols.
-sub c {'\[' . shift . '\]'}
+sub c {'\['.shift.'\]'}
 
 # Removes coloring from string.
 # Useful to count string length.
@@ -60,6 +62,15 @@ sub compose {
 	sub {$chain->(shift)}
 }
 
+sub end_marker {'~~ end of '.shift.' ~~'}
+sub reply_for {say encode_utf8 $_[1]->(); say encode_utf8 end_marker $_[0]}
+
+sub get_permission_mark {
+	my $is_root = shift == 0;
+	my $p_color = c($is_root ? RED : GREEN);
+	(color => $p_color, mark => $p_color . ($is_root ? '#' : '$') . c(RESET));
+}
+
 sub get_ps1 {
 
 	chomp(my $USER           = decode_utf8 <>);
@@ -90,13 +101,10 @@ sub get_ps1 {
 	my $pyvenv_view = (! $VIRTUAL_ENV) ? '' : sprintf '(pyvenv: %s) ',
 		c(MAGENTA) . basename($VIRTUAL_ENV, dirname $VIRTUAL_ENV) . c(RESET);
 
-	my $permission_color = ($UID == 0) ? c(RED) : c(GREEN);
-
-	my $permission_mark =
-		$permission_color . (($UID == 0) ? '#' : '$') . c(RESET);
+	my %perm = get_permission_mark $UID;
 
 	my $init_ps1 = sub {
-		$pyvenv_view . $permission_color . $USER . c(RESET) .
+		$pyvenv_view . $perm{color} . $USER . c(RESET) .
 			'@' . c(YELLOW) . $LOCAL_HOSTNAME . c(RESET) .
 			':' . c(BLUE) . $pwd_view . c(RESET) . $remote_view;
 	};
@@ -122,17 +130,81 @@ sub get_ps1 {
 	$till_eol_cols = 0 if $till_eol_cols < 0;
 
 	$ps1 .=
-		' 'x($till_eol_cols > 0) . '─'x$till_eol_cols . "\\n$permission_mark ";
+		' 'x($till_eol_cols > 0) . '─'x$till_eol_cols . "\\n$perm{mark} ";
 
-	encode_utf8 $ps1;
+	$ps1;
 }
 
-$|++;
+sub get_static_ps1 {
+
+	chomp(my $UID      = decode_utf8 <>);
+	chomp(my $HOSTNAME = decode_utf8 <>);
+	my %perm = get_permission_mark $UID;
+
+	$perm{color} .'\u'. c(RESET) .'@'. c(YELLOW) . $HOSTNAME . c(RESET) .
+		':'. c(BLUE) .'\w'. c(RESET) .'\n'. $perm{mark} .' ';
+}
+
+sub get_relative_path {
+
+	chomp(my $PWD  = decode_utf8 <>);
+	chomp(my $USER = decode_utf8 <>);
+	chomp(my $HOME = decode_utf8 <>);
+
+	my @masks = (
+		qr[^/run/media/$USER/([0-9A-Za-z_-]+)/(home/)?$USER(/|$)],
+		qr[^/media/$USER/([0-9A-Za-z_-]+)/(home/)?$USER(/|$)],
+		qr[^/media/([0-9A-Za-z_-]+)/(home/)?$USER/(/|$)],
+		qr[^/mnt/([0-9A-Za-z_-]+)/(home/)?$USER(/|$)],
+		qr[^/usr/home/$USER(/|$)],
+	);
+
+	use autodie qw(:all);
+
+	my $rel_path = eval {
+		my $same_dir = sub { -d $_[0] && stat($PWD)->ino == stat($_[0])->ino };
+		my $by_mask = sub { $PWD =~ $_[0]; ($1, substr($PWD, length $&)) };
+
+		foreach my $mask (@masks) {
+			next if $PWD !~ $mask;
+			my ($mnt_name, $tail) = $by_mask->($mask);
+
+			my $new_wd = "$HOME/$mnt_name" .
+				((length($tail) > 0) ? "/$tail" : '');
+
+			my $short_new_wd = "$HOME" . ((length($tail) > 0) ? "/$tail" : '');
+			return '' unless $same_dir->($new_wd);
+			return $same_dir->($short_new_wd) ? $short_new_wd : $new_wd;
+		}
+
+		return '' if length($PWD) < length($HOME) || $PWD !~ /^$HOME/;
+
+		my $wd_tail = substr $PWD, length($HOME) +
+			((length($PWD) > length($HOME)) ? 1 : 0);
+
+		return '' if length($wd_tail) == 0;
+		my @wd_tail = split '/', $wd_tail;
+		undef $wd_tail;
+		my $wd_sliced = "$HOME/" . join '/', splice @wd_tail, 1;
+		$wd_sliced = $HOME if $wd_sliced eq "$HOME/";
+		return '' unless $same_dir->($wd_sliced);
+		return $wd_sliced;
+	};
+
+	no autodie;
+	warn $@ if $@;
+	return ($@ ? '' : $rel_path);
+}
+
 while (<>) {
 	chomp;
+
 	if ($_ eq 'get-ps1') {
-		say get_ps1;
-		say 'end-get-ps1';
+		reply_for 'get-ps1', \&get_ps1;
+	} elsif ($_ eq 'get-static-ps1') {
+		reply_for 'get-static-ps1', \&get_static_ps1;
+	} elsif ($_ eq 'get-relative-path') {
+		reply_for 'get-relative-path', \&get_relative_path;
 	} else {
 		die "Unknown request: '$_'";
 	}

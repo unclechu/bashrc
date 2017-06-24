@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # .bashrc
 
-# if not running interactively, don't do anything
+# if isn't running interactively, don't do anything
 [[ -z $PS1 ]] && return
 
 if [[ -n $VTE_VERSION ]]; then
@@ -20,7 +20,7 @@ if [[ -n $VTE_VERSION ]]; then
 	__custom_vte_prompt_command() {
 		printf '%s' "$(__vte_prompt_command)" \
 			| perl -pe \
-				'BEGIN { $x=@ARGV[0]; @ARGV=() }; s/0;/0;$x/' \
+				'BEGIN { $x=$ARGV[0]; @ARGV=() }; s/0;/0;$x/' \
 				-- "$__term_name_prefix"
 	}
 
@@ -48,55 +48,62 @@ HISTSIZE=1000000
 
 # append to the history file, don't overwrite it
 shopt -s histappend
-# check the window size after each command and, if necessary, update the values of LINES and COLUMNS.
+# check the window size after each command and,
+# if necessary, update the values of LINES and COLUMNS.
 shopt -s checkwinsize
 # correct minor errors in the spelling of a directory component in a cd command
 shopt -s cdspell
-# save all lines of a multiple-line command in the same history entry (allows easy re-editing of multi-line commands)
+# save all lines of a multiple-line command in the same history entry
+# (allows easy re-editing of multi-line commands).
 shopt -s cmdhist
 # cd to a directory by typing its name
 shopt -s autocd
 
-__MY_BASHRC_CONFIGS_DIR=$(dirname -- "`readlink -f -- "${BASH_SOURCE[0]}"`")
+LOCAL_HOSTNAME=$([[ -f ~/.hostname ]] && \
+	printf '%s' "`cat ~/.hostname`" || printf '%s' "$HOSTNAME")
 
-. "$__MY_BASHRC_CONFIGS_DIR/utils/tmux-cd.sh"
-. "$__MY_BASHRC_CONFIGS_DIR/utils/cwd-abs-to-rel.sh"
-
-cwd-abs-to-rel
-
-if [[ -f ~/.hostname ]]; then
-	LOCAL_HOSTNAME=`cat ~/.hostname`
-else
-	LOCAL_HOSTNAME=$HOSTNAME
-fi
-
-function __perl {
-	perl \
-		-e 'use v5.10;' \
-		-e 'use Env qw(USER);' \
-		-e 'use Term::ANSIColor qw(:constants);' \
-		-e 'use IPC::System::Simple qw(capturex);' \
-		-e 'use constant UID => (getpwnam $USER)[2];' \
-		-e 'sub c {q<\[> . shift . q<\]>}' \
-		"$@"
-}
-
+__MY_BASHRC_CONFIG_DIR=$(dirname -- "`readlink -f -- "${BASH_SOURCE[0]}"`")
 __UID=`id -u`
 
-coproc __PROMPT_COPROC { $__MY_BASHRC_CONFIGS_DIR/utils/prompt-cmd.pl; }
+coproc __COPROC { $__MY_BASHRC_CONFIG_DIR/coproc.pl; }
 
-function prompt_command {
+# $1 - end marker
+__read_from_coproc() {
 
-	printf "%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n" 'get-ps1' \
-		"$USER" "$__UID" "$HOME" "$PWD" "$LOCAL_HOSTNAME" \
-		"$VIRTUAL_ENV" "$COLUMNS" >&${__PROMPT_COPROC[1]}
+	local task=$1
 
-	PS1=
-
-	while IFS= read -ru ${__PROMPT_COPROC[0]} x; do
-		[[ $x == 'end-get-ps1' ]] && break
-		PS1=$PS1$x
+	while (( $# > 0 )); do
+		printf '%s\n' "$1" >&${__COPROC[1]}
+		shift
 	done
+
+	while IFS= read -ru ${__COPROC[0]} x; do
+		[[ $x == "~~ end of $task ~~" ]] && break
+		printf '%s' "$x"
+	done
+}
+
+# changing dir at bash session start for tmux new panes/windows
+if [[ -n $TMUX ]]; then
+	__tmux_cd=$(tmux showenv _TMUX_CD 2>/dev/null)
+	if (( $? == 0 )) && [[ -n $__tmux_cd ]]; then
+		__tmux_cd=$(printf '%s' "$__tmux_cd" | perl -pe 's/^_TMUX_CD=//' 2>/dev/null)
+		if (( $? == 0 )) && [[ -n $__tmux_cd ]] && [[ -d $__tmux_cd ]]; then
+			cd -- "$__tmux_cd"
+		fi
+	fi
+	unset __tmux_cd
+fi
+
+__relative_path=`__read_from_coproc get-relative-path "$PWD" "$USER" "$HOME"`
+[[ -n $__relative_path ]] && cd -- "$__relative_path"
+unset __relative_path
+
+prompt_command() {
+
+	PS1=$(__read_from_coproc get-ps1 \
+		"$USER" "$__UID" "$HOME" "$PWD" "$LOCAL_HOSTNAME" \
+		"$VIRTUAL_ENV" "$COLUMNS")
 
 	[[ -n $VTE_VERSION ]] && __custom_vte_prompt_command
 }
@@ -104,21 +111,8 @@ function prompt_command {
 # set prompt command (title update and color prompt)
 PROMPT_COMMAND=prompt_command
 
-# permission symbol
-__perm_symbol=
-case "$__UID" in
-	0) __perm_symbol=$(__perl -e 'print c(RED),   q{#}, c(RESET)') ;;
-	*) __perm_symbol=$(__perl -e 'print c(GREEN), q{$}, c(RESET)') ;;
-esac
-
 # set new b/w prompt (will be overwritten in 'prompt_command' later)
-PS1=$(__perl \
-	-e 'BEGIN { $HOSTNAME=$ARGV[0]; $__perm_symbol=$ARGV[1]; @ARGV=() };' \
-	-e 'print (((UID == 0) ? c(RED) : c(GREEN)), q{\u}, c(RESET));' \
-	-e 'print q{@}, c(YELLOW), $HOSTNAME, c(RESET), q{:};' \
-	-e 'print c(BLUE), q{\w}, c(RESET), q{\n}, $__perm_symbol, q{ };' \
-	-- "$LOCAL_HOSTNAME" "$__perm_symbol"
-)
+PS1=`__read_from_coproc get-static-ps1 "$__UID" "$LOCAL_HOSTNAME"`
 
 # Postgres won't work without this
 export PGHOST=/tmp
@@ -131,18 +125,17 @@ bind '"\C-n":menu-complete'
 bind '"\C-p":menu-complete-backward'
 
 # silently spawn an application in background
-function _burp_completion {
+_burp_completion() {
 	local cur=${COMP_WORDS[COMP_CWORD]}
 	COMPREPLY=($(compgen -A function -abck -- "$cur"))
 }
 complete -F _burp_completion -o default burp
 
 # pip bash completion start
-_pip_completion()
-{
-    COMPREPLY=( $( COMP_WORDS="${COMP_WORDS[*]}" \
-                   COMP_CWORD=$COMP_CWORD \
-                   PIP_AUTO_COMPLETE=1 $1 ) )
+_pip_completion() {
+	COMPREPLY=($( \
+		COMP_WORDS="${COMP_WORDS[*]}" COMP_CWORD=$COMP_CWORD \
+		PIP_AUTO_COMPLETE=1 $1))
 }
 complete -o default -F _pip_completion pip
 # pip bash completion end
