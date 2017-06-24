@@ -193,7 +193,7 @@ sub get_relative_path {
 
 	no autodie;
 	warn $@ if $@;
-	return ($@ ? '' : $rel_path);
+	$@ ? '' : $rel_path;
 }
 
 while (<>) {
