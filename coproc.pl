@@ -80,7 +80,6 @@ sub get_ps1 {
 	chomp(my $LOCAL_HOSTNAME = decode_utf8 <>);
 	chomp(my $VIRTUAL_ENV    = decode_utf8 <>);
 	chomp(my $COLUMNS        = (decode_utf8 <>) + 0);
-	chomp(my $INITIALIZED    = (decode_utf8 <>) + 0);
 	chomp(my $RETVAL         = (decode_utf8 <>) + 0);
 
 	# Replacing $HOME in path with tilda
@@ -113,8 +112,7 @@ sub get_ps1 {
 			c(BOLD) . c($okay ? GREEN : RED) .
 			($okay ? '✓' : '✗') . ($okay ? '' : $RETVAL) .' '. c(RESET);
 
-		$pyvenv_view . ($INITIALIZED ? $exitCode : '') .
-			$perm{color} . $USER . c(RESET) .
+		$pyvenv_view . $exitCode .  $perm{color} . $USER . c(RESET) .
 			'@' . c(YELLOW) . $LOCAL_HOSTNAME . c(RESET) .
 			':' . c(BLUE) . $pwd_view . c(RESET) . $remote_view;
 	};

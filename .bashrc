@@ -101,16 +101,13 @@ __relative_path=`__read_from_coproc get-relative-path "$PWD" "$USER" "$HOME"`
 [[ -n $__relative_path ]] && cd -- "$__relative_path"
 unset __relative_path
 
-__PROMPT_INIT=0
-
 prompt_command() {
 
 	PS1=$(__read_from_coproc get-ps1 \
 		"$USER" "$__UID" "$HOME" "$PWD" "$LOCAL_HOSTNAME" \
-		"$VIRTUAL_ENV" "$COLUMNS" "$__PROMPT_INIT" "$?")
+		"$VIRTUAL_ENV" "$COLUMNS" "$?")
 
 	[[ -n $VTE_VERSION ]] && __custom_vte_prompt_command
-	(( $__PROMPT_INIT != 1 )) && __PROMPT_INIT=1
 }
 
 # set prompt command (title update and color prompt)
