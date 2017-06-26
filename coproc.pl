@@ -107,9 +107,11 @@ sub get_ps1 {
 
 	my $init_ps1 = sub {
 
+		my $okay = $RETVAL == 0;
+
 		my $exitCode =
-			c(BOLD) . c(($RETVAL == 0) ? GREEN : RED) .
-			(($RETVAL == 0) ? '✓' : '✗') ."$RETVAL ". c(RESET);
+			c(BOLD) . c($okay ? GREEN : RED) .
+			($okay ? '✓' : '✗') . ($okay ? '' : $RETVAL) .' '. c(RESET);
 
 		$pyvenv_view . ($INITIALIZED ? $exitCode : '') .
 			$perm{color} . $USER . c(RESET) .
