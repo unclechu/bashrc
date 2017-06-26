@@ -74,12 +74,14 @@ sub get_permission_mark {
 sub get_ps1 {
 
 	chomp(my $USER           = decode_utf8 <>);
-	chomp(my $UID            = decode_utf8 <>);
+	chomp(my $UID            = (decode_utf8 <>) + 0);
 	chomp(my $HOME           = decode_utf8 <>);
 	chomp(my $PWD            = decode_utf8 <>);
 	chomp(my $LOCAL_HOSTNAME = decode_utf8 <>);
 	chomp(my $VIRTUAL_ENV    = decode_utf8 <>);
-	chomp(my $COLUMNS        = decode_utf8 <>);
+	chomp(my $COLUMNS        = (decode_utf8 <>) + 0);
+	chomp(my $INITIALIZED    = (decode_utf8 <>) + 0);
+	chomp(my $RETVAL         = (decode_utf8 <>) + 0);
 
 	# Replacing $HOME in path with tilda
 	my $pwd_view =
@@ -104,7 +106,13 @@ sub get_ps1 {
 	my %perm = get_permission_mark $UID;
 
 	my $init_ps1 = sub {
-		$pyvenv_view . $perm{color} . $USER . c(RESET) .
+
+		my $exitCode =
+			c(BOLD) . c(($RETVAL == 0) ? GREEN : RED) .
+			(($RETVAL == 0) ? '✓' : '✗') ."$RETVAL ". c(RESET);
+
+		$pyvenv_view . ($INITIALIZED ? $exitCode : '') .
+			$perm{color} . $USER . c(RESET) .
 			'@' . c(YELLOW) . $LOCAL_HOSTNAME . c(RESET) .
 			':' . c(BLUE) . $pwd_view . c(RESET) . $remote_view;
 	};
@@ -137,7 +145,7 @@ sub get_ps1 {
 
 sub get_static_ps1 {
 
-	chomp(my $UID      = decode_utf8 <>);
+	chomp(my $UID      = (decode_utf8 <>) + 0);
 	chomp(my $HOSTNAME = decode_utf8 <>);
 	my %perm = get_permission_mark $UID;
 
