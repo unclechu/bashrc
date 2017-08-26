@@ -38,11 +38,9 @@ alias gp=$(
 )
 
 # go "$1" levels up
-...() {
-	local c=2
-	if (( $# == 0 )); then
-		: # it's okay, taking `...` as `... 2` (because `..` is `... 1`)
-	elif (( $# != 1 )); then
+.x() {
+	local c=
+	if (( $# != 1 )); then
 		echo 'incorrect arguments count' 1>&2
 		return 1
 	elif [[ $1 != $[$1] ]]; then
