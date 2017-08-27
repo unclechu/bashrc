@@ -86,8 +86,10 @@ if (capturex(qw/git status --porcelain/) ne '') {
 sub title_it {@t = (@_, ' ', @t_for_unit); say @t, ' repo'}
 sub notifail {say STDERR fail @t}
 
-title_it action "Git $action";
-notifail if system('git', $action) != 0;
+my $branch;
+for (capturex qw(git branch)) {if (/^\* (.+)$/) {$branch = $1; last}}
+title_it action "Git $action (origin $branch)";
+notifail if system('git', $action, 'origin', $branch) != 0;
 
 title_it subaction 'Updating git submodules';
 notifail if system(qw/git submodule update --init/) != 0;
