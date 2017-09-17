@@ -16,7 +16,10 @@ if [[ -n $VTE_VERSION ]]; then
 		echo 'vte.sh not found' 1>&2
 	fi
 
-	__term_name_prefix=$([[ $TERM == xterm-termite ]] && printf 'termite | ')
+	if [[ -z $__term_name_prefix ]] && [[ $TERM == xterm-termite ]]; then
+		export __term_name_prefix='termite | '
+	fi
+
 	__custom_vte_prompt_command() {
 		local cmd=$1
 		[[ -n $cmd ]] && cmd="$cmd | "
