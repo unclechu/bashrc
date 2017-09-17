@@ -18,10 +18,14 @@ if [[ -n $VTE_VERSION ]]; then
 
 	__term_name_prefix=$([[ $TERM == xterm-termite ]] && printf 'termite | ')
 	__custom_vte_prompt_command() {
-		printf '%s' "$(__vte_prompt_command)" \
-			| perl -pe \
-				'BEGIN { $x=$ARGV[0]; @ARGV=() }; s/0;/0;$x/' \
-				-- "$__term_name_prefix"
+		local cmd=$1
+		[[ -n $cmd ]] && cmd="$cmd | "
+
+		perl -e '
+			BEGIN { $_=$ARGV[0]; $term=$ARGV[1]; $cmd=$ARGV[2]; @ARGV=() };
+			s/0;/0;$term$cmd/;
+			print;
+		' -- "$(__vte_prompt_command)" "$__term_name_prefix" "$cmd"
 	}
 
 	export TERM=xterm-256color
@@ -101,8 +105,11 @@ __relative_path=`__read_from_coproc get-relative-path "$PWD" "$USER" "$HOME"`
 [[ -n $__relative_path ]] && cd -- "$__relative_path"
 unset __relative_path
 
-prompt_command() {
+if [[ -n $VTE_VERSION ]]; then
+	trap '__custom_vte_prompt_command "${BASH_COMMAND%% *}"' DEBUG
+fi
 
+prompt_command() {
 	PS1=$(__read_from_coproc get-ps1 \
 		"$USER" "$__UID" "$HOME" "$PWD" "$LOCAL_HOSTNAME" \
 		"$VIRTUAL_ENV" "$COLUMNS" "$?")
