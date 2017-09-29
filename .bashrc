@@ -126,9 +126,6 @@ PROMPT_COMMAND=prompt_command
 # set new b/w prompt (will be overwritten in 'prompt_command' later)
 PS1=`__read_from_coproc get-static-ps1 "$__UID" "$LOCAL_HOSTNAME"`
 
-# Postgres won't work without this
-export PGHOST=/tmp
-
 # this is for delete words by ^W
 tty -s && stty werase ^- 2>/dev/null
 
