@@ -31,11 +31,11 @@ if [[ -n $VTE_VERSION ]]; then
 		' -- "$(__vte_prompt_command)" "$__term_name_prefix" "$cmd"
 	}
 
-	export TERM=xterm-256color
+	export TERM=screen-256color
 
 elif env | grep '^KONSOLE_' 1>/dev/null; then
 
-	export TERM=xterm-256color
+	export TERM=screen-256color
 fi
 
 if which nvim 0</dev/null 1>/dev/null 2>/dev/null; then
