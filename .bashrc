@@ -6,12 +6,10 @@
 
 if [[ -n $VTE_VERSION ]]; then
 
-	if [[ -f '/opt/vte-ng-v0.46.0.a-git/etc/profile.d/vte.sh' ]]; then
-		. '/opt/vte-ng-v0.46.0.a-git/etc/profile.d/vte.sh'
-	elif [[ -f '/etc/profile.d/vte.sh' ]]; then
-		. '/etc/profile.d/vte.sh'
-	elif [[ -f '/usr/local/etc/profile.d/vte.sh' ]]; then
-		. '/usr/local/etc/profile.d/vte.sh'
+	if [[ -f /usr/local/etc/profile.d/vte.sh ]]; then
+		. /usr/local/etc/profile.d/vte.sh
+	elif [[ -f /etc/profile.d/vte.sh ]]; then
+		. /etc/profile.d/vte.sh
 	else
 		echo 'vte.sh not found' 1>&2
 	fi
