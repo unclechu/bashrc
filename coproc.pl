@@ -159,11 +159,14 @@ sub get_relative_path {
 	chomp(my $USER = decode_utf8 <>);
 	chomp(my $HOME = decode_utf8 <>);
 
+	my $docker_dev_mask = qr[^/mnt/([0-9A-Za-z_-]+)/docker/$USER-dev(/|$)];
+
 	my @masks = (
 		qr[^/run/media/$USER/([0-9A-Za-z_-]+)/(home/)?$USER(/|$)],
 		qr[^/media/$USER/([0-9A-Za-z_-]+)/(home/)?$USER(/|$)],
 		qr[^/media/([0-9A-Za-z_-]+)/(home/)?$USER/(/|$)],
 		qr[^/mnt/([0-9A-Za-z_-]+)/(home/)?$USER(/|$)],
+		$docker_dev_mask,
 		qr[^/usr/home/$USER(/|$)],
 	);
 
@@ -176,11 +179,14 @@ sub get_relative_path {
 		foreach my $mask (@masks) {
 			next if $PWD !~ $mask;
 			my ($mnt_name, $tail) = $by_mask->($mask);
+			$tail = (length($tail) > 0) ? "/$tail" : '';
 
-			my $new_wd = "$HOME/$mnt_name" .
-				((length($tail) > 0) ? "/$tail" : '');
+			my $new_wd =
+				($PWD =~ $docker_dev_mask) ?
+					"$HOME/docker-dev${tail}" :
+					"$HOME/${mnt_name}${tail}";
 
-			my $short_new_wd = "$HOME" . ((length($tail) > 0) ? "/$tail" : '');
+			my $short_new_wd = "${HOME}${tail}";
 			return '' unless $same_dir->($new_wd);
 			return $same_dir->($short_new_wd) ? $short_new_wd : $new_wd;
 		}
