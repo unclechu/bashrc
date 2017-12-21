@@ -29,6 +29,7 @@ alias gitpl='git pull origin `gitb`'
 alias gitph='git push origin `gitb`'
 
 alias tmuxs=$'printf \'/tmp/%s-tmux-%s\' "`whoami`" '
+alias tm=tmux
 
 # shortcut for gpaste cli
 alias gp=$(
@@ -70,7 +71,7 @@ burp() {
 }
 
 # prints last command as string
-last-cmd() {
+lastc() {
 	local last=$(history 2 | sed -e '$d')
 	perl -e '$_ = shift; chomp; s/^[ 0-9]+[ ]+//; print' -- "$last"
 	return $?
