@@ -30,6 +30,7 @@ alias gitph='git push origin `gitb`'
 
 alias tmuxs=$'printf \'/tmp/%s-tmux-%s\' "`whoami`" '
 alias tm=tmux
+alias tmsh=tmuxsh
 
 # shortcut for gpaste cli
 alias gp=$(
