@@ -36,7 +36,14 @@ alias tmsh=tmuxsh
 alias gp=$(
 	[[ -x `which gpaste-client 2>/dev/null` ]] && echo 'gpaste-client' || \
 	([[ -x `which gpaste 2>/dev/null` ]] && echo 'gpaste' || \
-		echo 'echo gpaste not found 1>&2')
+		echo 'echo gpaste not found 1>&2 ; false')
+)
+
+alias v=$(
+	[[ -x `which nvim 2>/dev/null` ]] && echo nvim || \
+	([[ -x `which vim 2>/dev/null` ]] && echo vim || \
+	([[ -x `which vi 2>/dev/null` ]] && echo vi || \
+		echo 'echo not found any implementation of vi 1>&2 ; false'))
 )
 
 # go "$1" levels up
