@@ -97,3 +97,17 @@ mkdircd() {
 		return $?
 	fi
 }
+
+# helper to remove TMUX variable from running application (support aliases)
+notm() {
+	(( $# == 0 )) && { echo 'no app specified to run' 1>&2; return 1; }
+	local app=$1; shift
+	local aliased=${BASH_ALIASES[$app]}
+	export TMUX=
+	if [[ -n $aliased ]]; then
+		bash -c $". ~/.bash_aliases && $aliased \"\$@\"" -- "$@"
+	else
+		"$app" "$@"
+	fi
+	return $?
+}
