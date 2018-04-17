@@ -28,7 +28,10 @@ alias gitco='git checkout'
 alias gitpl='git pull origin `gitb`'
 alias gitph='git push origin `gitb`'
 
+# to generate tmux session socket file path based on username
 alias tmuxs=$'printf \'/tmp/%s-tmux-%s\' "`whoami`" '
+
+# tmux shortcuts
 alias tm=tmux
 alias tmsh=tmuxsh
 
@@ -39,12 +42,16 @@ alias gp=$(
 		echo 'echo gpaste not found 1>&2 ; false')
 )
 
+# any available vi-like editor
 alias v=$(
 	[[ -x `which nvim 2>/dev/null` ]] && echo nvim || \
 	([[ -x `which vim 2>/dev/null` ]] && echo vim || \
 	([[ -x `which vi 2>/dev/null` ]] && echo vi || \
 		echo 'echo not found any implementation of vi 1>&2 ; false'))
 )
+
+# HASKell Interactive (ghci from latest stackage LTS)
+alias haski='stack exec ghci --'
 
 # go "$1" levels up
 .x() {
