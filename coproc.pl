@@ -68,7 +68,7 @@ sub reply_for {say encode_utf8 $_[1]->(); say encode_utf8 end_marker $_[0]}
 sub get_permission_mark {
 	my $is_root = shift == 0;
 	my $p_color = c($is_root ? RED : GREEN);
-	(color => $p_color, mark => $p_color . ($is_root ? 'Λ' : 'λ') . c(RESET));
+	(color => $p_color, mark => $p_color . ($is_root ? 'α' : 'λ') . c(RESET));
 }
 
 sub get_ps1 {
