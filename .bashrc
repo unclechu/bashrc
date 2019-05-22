@@ -63,6 +63,8 @@ shopt -s cdspell
 shopt -s cmdhist
 # cd to a directory by typing its name
 shopt -s autocd
+# regex-style pattern matching
+shopt -s extglob
 
 LOCAL_HOSTNAME=$([[ -f ~/.hostname ]] && \
 	printf '%s' "`cat ~/.hostname`" || printf '%s' "$HOSTNAME")
