@@ -11,7 +11,7 @@ if [[ -n $VTE_VERSION ]]; then
 	elif [[ -f /etc/profile.d/vte.sh ]]; then
 		. /etc/profile.d/vte.sh
 	else
-		echo 'vte.sh not found' 1>&2
+		echo 'vte.sh not found' >&2
 	fi
 
 	if [[ -z $__term_name_prefix ]] && [[ $TERM == xterm-termite ]]; then
@@ -31,18 +31,17 @@ if [[ -n $VTE_VERSION ]]; then
 
 	export TERM=screen-256color
 
-elif env | grep '^KONSOLE_' 1>/dev/null; then
+elif env | grep '^KONSOLE_' >/dev/null; then
 
 	export TERM=screen-256color
 fi
 
-if which nvim 0</dev/null 1>/dev/null 2>/dev/null; then
-	export EDITOR=nvim
-elif which vim 0</dev/null 1>/dev/null 2>/dev/null; then
-	export EDITOR=vim
-elif which nano 0</dev/null 1>/dev/null 2>/dev/null; then
-	export EDITOR=nano
-fi
+export EDITOR=$(
+	([[ -x `which nvim 2>/dev/null` ]] && echo nvim ||\
+	([[ -x `which vim  2>/dev/null` ]] && echo vim  ||\
+	([[ -x `which vi   2>/dev/null` ]] && echo vi   ||\
+	([[ -x `which nano 2>/dev/null` ]] && echo nano ))))
+)
 
 # don't put duplicate lines in the history
 export HISTCONTROL=ignoreboth:erasedups

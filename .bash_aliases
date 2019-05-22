@@ -3,7 +3,7 @@
 
 shopt -s expand_aliases
 
-# ls stuff
+# `ls` stuff
 if [[ `uname` != FreeBSD ]]; then
 	alias ls='ls --color=auto'
 	eval "`dircolors`"
@@ -39,7 +39,7 @@ alias tmsh=tmuxsh
 alias gp=$(
 	[[ -x `which gpaste-client 2>/dev/null` ]] && echo 'gpaste-client' || \
 	([[ -x `which gpaste 2>/dev/null` ]] && echo 'gpaste' || \
-		echo 'echo gpaste not found 1>&2 ; false')
+		echo 'echo gpaste not found >&2 ; false')
 )
 
 # any available vi-like editor
@@ -47,20 +47,20 @@ alias v=$(
 	[[ -x `which nvim 2>/dev/null` ]] && echo nvim || \
 	([[ -x `which vim 2>/dev/null` ]] && echo vim || \
 	([[ -x `which vi 2>/dev/null` ]] && echo vi || \
-		echo 'echo not found any implementation of vi 1>&2 ; false'))
+		echo 'echo not found any implementation of vi >&2 ; false'))
 )
 
-# HASKell Interactive (ghci from latest stackage LTS)
+# HASKell Interactive (ghci from default stackage LTS)
 alias haski='stack exec ghci --'
 
 # go "$1" levels up
 .x() {
 	local c=
 	if (( $# != 1 )); then
-		echo 'incorrect arguments count' 1>&2
+		echo 'incorrect arguments count' >&2
 		return 1
 	elif [[ $1 != $[$1] ]]; then
-		echo 'incorrect go up level argument' 1>&2
+		echo 'incorrect go up level argument' >&2
 		return 1
 	else
 		c=$1
@@ -76,12 +76,12 @@ alias haski='stack exec ghci --'
 # silent process in background
 burp() {
 	if (( $# < 1 )); then
-		echo 'not enough arguments to burp' 1>&2
+		echo 'not enough arguments to burp' >&2
 		return 1
 	fi
 	local app=$1
 	shift
-	"$app" "$@" 0</dev/null 1>/dev/null 2>/dev/null &
+	"$app" "$@" 0</dev/null &>/dev/null &
 	return $?
 }
 
@@ -107,7 +107,7 @@ mkdircd() {
 
 # helper to remove TMUX variable from running application (support aliases)
 notm() {
-	(( $# == 0 )) && { echo 'no app specified to run' 1>&2; return 1; }
+	(( $# == 0 )) && { echo 'no app specified to run' >&2; return 1; }
 	local app=$1; shift
 	local aliased=${BASH_ALIASES[$app]}
 	export TMUX=
