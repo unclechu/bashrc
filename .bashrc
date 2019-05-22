@@ -64,6 +64,8 @@ shopt -s cmdhist
 shopt -s autocd
 # regex-style pattern matching
 shopt -s extglob
+# show command from history before execute it
+shopt -s histverify
 
 LOCAL_HOSTNAME=$([[ -f ~/.hostname ]] && \
 	printf '%s' "`cat ~/.hostname`" || printf '%s' "$HOSTNAME")
