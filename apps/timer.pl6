@@ -46,7 +46,7 @@ sub view-duration(Duration $dur is copy, Str $pfx --> Str) {
   $view ~ ' ' x $line-limit - $view.chars;
 }
 
-sub MAIN(Str :$message = 'Time is up!', Bool :$silent = False, *@delays) {
+sub MAIN(Str :m(:$message) = 'Time is up!', Bool :s(:$silent) = False, *@delays) {
   my Int $delay = 0;
 
   for @delays {
