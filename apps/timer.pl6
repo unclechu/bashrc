@@ -1,25 +1,35 @@
 #!/usr/bin/env perl6
 use v6;
 close $*IN;
-my Int $line-limit := 60;
-my Str $BS := "\c[BACKSPACE]";
-my Str $UP := "\c[ESCAPE][1A";
+my Int \LineLimit := 60;
+my Str \TimeIsUp  := 'Time is up!';
+my Str \BS        := "\c[BACKSPACE]";
+my Str \UP        := "\c[ESCAPE][1A";
 
-sub show-message(Str $message) {
-  my Str @args = Q:w <dzen2 -p -bg red -fg white -fn -*-sans-bold-*-*-*-*-*-*-*-*-*-*-*>;
+class Dzen {
+  has Promise     $.promise;
+  has Proc::Async $.proc;
+}
+
+sub show-message(Str $message --> Dzen) {
+  my Str @args = Q:w <dzen2 -p -bg red -fg white -fn -*-Hack-bold-*-*-*-72-*-*-*-*-*-*-*>;
   my Proc::Async $proc := Proc::Async.new(:w, |@args);
   my Promise $promise := $proc.start;
   await $proc.say: $message;
   $proc.close-stdin;
 
-  try {
-    await $promise;
+  my Promise $top-promise := start {
+    try {
+      await $promise;
 
-    CATCH {
-      when .message ~~ /'(exit code: 13)'/ {.resume}
-      default {.rethrow}
+      CATCH {
+        when .message ~~ /'(exit code: 13)'/ {.resume}
+        default {.rethrow}
+      }
     }
-  }
+  };
+
+  Dzen.new(:promise($top-promise), :proc($proc));
 }
 
 sub view-duration(Duration $dur is copy, Str $pfx --> Str) {
@@ -43,10 +53,10 @@ sub view-duration(Duration $dur is copy, Str $pfx --> Str) {
     s($r-seconds, 'second'),
   ).join.&{$_ || ' '}.substr(1)) ~ '…';
 
-  $view ~ ' ' x $line-limit - $view.chars;
+  $view ~ ' ' x LineLimit - $view.chars;
 }
 
-sub MAIN(Str :m(:$message) = 'Time is up!', Bool :s(:$silent) = False, *@delays) {
+sub MAIN(Str :m(:$message) = TimeIsUp, Bool :s(:$silent) = False, *@delays) {
   my Int $delay = 0;
 
   for @delays {
@@ -63,26 +73,39 @@ sub MAIN(Str :m(:$message) = 'Time is up!', Bool :s(:$silent) = False, *@delays)
     default {die "Incorrect argument: $_"}
   }
 
-  my DateTime $startDT := DateTime.now;
-  my DateTime $delayDT := DateTime.new: $startDT.posix + $delay + 1;
-  my DateTime $now = $startDT;
+  my DateTime $start-time := DateTime.now;
+  my DateTime $delay-time := DateTime.new: $start-time.posix + $delay + 1;
+  my DateTime $now = $start-time;
   print "\n\n" unless $silent;
 
   sub wait() {
-    sleep $delayDT.posix - $now.posix - 1 > 0 ?? 1 !! 0.1;
+    sleep $delay-time.posix - $now.posix - 1 > 0 ?? 1 !! 0.1;
     $now = DateTime.now;
   }
 
-  while $delayDT > $now {
+  while $delay-time > $now {
     {wait; next} if $silent;
-    my Duration $spent := $now - $startDT;
-    my Duration $remains := $delayDT - $now;
-    say $UP x 2 ~ view-duration($spent, 'Spent') ~ "\n" ~ view-duration($remains, 'Remains');
+    my Duration $spent := $now - $start-time;
+    my Duration $remains := $delay-time - $now;
+    say UP x 2 ~ view-duration($spent, 'Spent') ~ "\n" ~ view-duration($remains, 'Remains');
     wait;
   }
 
-  show-message $message;
-  say $UP ~ 'Done' ~ ' ' x $line-limit - 'Done'.chars unless $silent;
+  say UP ~ TimeIsUp ~ ' ' x LineLimit - TimeIsUp.chars;
+  my Dzen $dzen := show-message($message);
+
+  my Promise $overspent-promise := $silent ?? Promise.new !! start {
+    my DateTime $time-is-up-time := DateTime.now;
+
+    loop {
+      sleep 1;
+      $now = DateTime.now;
+      say UP ~ view-duration($now - $time-is-up-time, 'Overspent');
+    }
+  };
+
+  await Promise.anyof($dzen.promise, $overspent-promise);
+  $dzen.proc.kill;
 }
 
 # vim:cc=101:tw=100:et:ts=2:sw=2:sts=2:
