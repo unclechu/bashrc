@@ -12,7 +12,7 @@ else
 fi
 alias la='ls -lah'
 alias al='ls -lah'
-alias l='ls -lah'
+alias  l='ls -lah'
 
 # git stuff
 alias gits='git status'
@@ -37,17 +37,18 @@ alias tmsh=tmuxsh
 
 # shortcut for gpaste cli
 alias gp=$(
-	[[ -x `which gpaste-client 2>/dev/null` ]] && echo 'gpaste-client' || \
-	([[ -x `which gpaste 2>/dev/null` ]] && echo 'gpaste' || \
-		echo 'echo gpaste not found >&2 ; false')
+	([[ -x `which gpaste-client 2>/dev/null` ]] && echo 'gpaste-client' ||
+	([[ -x `which gpaste        2>/dev/null` ]] && echo 'gpaste'        ||
+		echo 'echo gpaste not found >&2 ; false'))
 )
 
 # any available vi-like editor
 alias v=$(
-	[[ -x `which nvim 2>/dev/null` ]] && echo nvim || \
-	([[ -x `which vim 2>/dev/null` ]] && echo vim || \
-	([[ -x `which vi 2>/dev/null` ]] && echo vi || \
-		echo 'echo not found any implementation of vi >&2 ; false'))
+	([[ -n $EDITOR ]] && printf '%s' "$EDITOR"      ||
+	([[ -x `which nvim 2>/dev/null` ]] && echo nvim ||
+	([[ -x `which  vim 2>/dev/null` ]] && echo  vim ||
+	([[ -x `which  vi  2>/dev/null` ]] && echo  vi  ||
+		echo 'echo not found any implementation of vi >&2 ; false'))))
 )
 
 # HASKell Interactive (ghci from default stackage LTS)

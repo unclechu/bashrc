@@ -4,43 +4,70 @@
 # if isn't running interactively, don't do anything
 [[ -z $PS1 ]] && return
 
+declare -A __COLOR
+# padded with zeroes to be able to cut off colors using native bash replace
+# (bash replace just has some regex features but it's not a real regex)
+__COLOR=(
+	[RESET]='\[\e[000m\]' [BOLD]='\[\e[001m\]' [DARK]='\[\e[002m\]'
+	[ITALIC]='\[\e[003m\]' [UNDERLINE]='\[\e[004m\]' [BLINK]='\[\e[005m\]'
+	[REVERSE]='\[\e[007m\]' [CONCEALED]='\[\e[008m\]'
+
+	[BLACK]='\[\e[030m\]'   [ON_BLACK]='\[\e[040m\]'
+	[RED]='\[\e[031m\]'     [ON_RED]='\[\e[041m\]'
+	[GREEN]='\[\e[032m\]'   [ON_GREEN]='\[\e[042m\]'
+	[YELLOW]='\[\e[033m\]'  [ON_YELLOW]='\[\e[043m\]'
+	[BLUE]='\[\e[034m\]'    [ON_BLUE]='\[\e[044m\]'
+	[MAGENTA]='\[\e[035m\]' [ON_MAGENTA]='\[\e[045m\]'
+	[CYAN]='\[\e[036m\]'    [ON_CYAN]='\[\e[046m\]'
+	[WHITE]='\[\e[037m\]'   [ON_WHITE]='\[\e[047m\]'
+
+	[BRIGHT_BLACK]='\[\e[090m\]'   [ON_BRIGHT_BLACK]='\[\e[100m\]'
+	[BRIGHT_RED]='\[\e[091m\]'     [ON_BRIGHT_RED]='\[\e[101m\]'
+	[BRIGHT_GREEN]='\[\e[092m\]'   [ON_BRIGHT_GREEN]='\[\e[102m\]'
+	[BRIGHT_YELLOW]='\[\e[093m\]'  [ON_BRIGHT_YELLOW]='\[\e[103m\]'
+	[BRIGHT_BLUE]='\[\e[094m\]'    [ON_BRIGHT_BLUE]='\[\e[104m\]'
+	[BRIGHT_MAGENTA]='\[\e[095m\]' [ON_BRIGHT_MAGENTA]='\[\e[105m\]'
+	[BRIGHT_CYAN]='\[\e[096m\]'    [ON_BRIGHT_CYAN]='\[\e[106m\]'
+	[BRIGHT_WHITE]='\[\e[097m\]'   [ON_BRIGHT_WHITE]='\[\e[107m\]'
+)
+
+# use it to remove color symbols like this: ${x//$__COLOR_PATTERN/}
+__COLOR_PATTERN='\\\[[[:cntrl:]]\[[[:digit:]][[:digit:]][[:digit:]]m\\\]'
+
+[[ -z $__TERM_NAME_PREFIX ]] && [[ $TERM == xterm-termite ]] &&
+	export __TERM_NAME_PREFIX='termite | '
+
 if [[ -n $VTE_VERSION ]]; then
+	. '/usr/local/etc/profile.d/vte.sh' 2>/dev/null ||
+		. '/etc/profile.d/vte.sh' 2>/dev/null
 
-	if [[ -f /usr/local/etc/profile.d/vte.sh ]]; then
-		. /usr/local/etc/profile.d/vte.sh
-	elif [[ -f /etc/profile.d/vte.sh ]]; then
-		. /etc/profile.d/vte.sh
-	else
-		echo 'vte.sh not found' >&2
-	fi
-
-	if [[ -z $__term_name_prefix ]] && [[ $TERM == xterm-termite ]]; then
-		export __term_name_prefix='termite | '
+	if (( $? != 0 )); then
+		echo '[ERROR] vte.sh not found!' >&2
+		__vte_prompt_command() { return 1; }
 	fi
 
 	__custom_vte_prompt_command() {
-		local cmd=$1
-		[[ -n $cmd ]] && cmd="$cmd | "
+		local prompt=$(__vte_prompt_command 2>/dev/null)
 
-		perl -e '
-			BEGIN { $_=$ARGV[0]; $term=$ARGV[1]; $cmd=$ARGV[2]; @ARGV=() };
-			s/0;/0;$term$cmd/;
-			print;
-		' -- "$(__vte_prompt_command)" "$__term_name_prefix" "$cmd"
+		if (( $? == 0 )); then
+			local cmd=$([[ -n $1 ]] && printf '%s | ' "$1")
+			printf '%s' "${prompt/0;/0;${__TERM_NAME_PREFIX}${cmd}}"
+		fi
 	}
 
 	export TERM=screen-256color
 
-elif env | grep '^KONSOLE_' >/dev/null; then
-
+elif [[ -n $KONSOLE_VERSION ]]; then
 	export TERM=screen-256color
 fi
 
 export EDITOR=$(
-	([[ -x `which nvim 2>/dev/null` ]] && echo nvim ||\
-	([[ -x `which vim  2>/dev/null` ]] && echo vim  ||\
-	([[ -x `which vi   2>/dev/null` ]] && echo vi   ||\
-	([[ -x `which nano 2>/dev/null` ]] && echo nano ))))
+	# better to predefine it a file to reduce startup time
+	(cat ~/.editor 2>/dev/null                      ||
+	([[ -x `which nvim 2>/dev/null` ]] && echo nvim ||
+	([[ -x `which vim  2>/dev/null` ]] && echo vim  ||
+	([[ -x `which vi   2>/dev/null` ]] && echo vi   ||
+	([[ -x `which nano 2>/dev/null` ]] && echo nano )))))
 )
 
 # don't put duplicate lines in the history
@@ -67,56 +94,197 @@ shopt -s extglob
 # show command from history before execute it
 shopt -s histverify
 
-LOCAL_HOSTNAME=$([[ -f ~/.hostname ]] && \
-	printf '%s' "`cat ~/.hostname`" || printf '%s' "$HOSTNAME")
-
-__MY_BASHRC_CONFIG_DIR=$(dirname -- "`readlink -f -- "${BASH_SOURCE[0]}"`")
-__UID=`id -u`
-
-coproc __COPROC { "$__MY_BASHRC_CONFIG_DIR/coproc.pl"; }
-
-# $1 - end marker
-__read_from_coproc() {
-
-	local task=$1
-
-	while (( $# > 0 )); do
-		printf '%s\n' "$1" >&${__COPROC[1]}
-		shift
-	done
-
-	while IFS= read -ru ${__COPROC[0]} x; do
-		[[ $x == "~~ end of $task ~~" ]] && break
-		printf '%s' "$x"
-	done
-}
+LOCAL_HOSTNAME=$(
+	[[ -f ~/.hostname ]] && cat ~/.hostname || printf '%s' "$HOSTNAME"
+)
 
 # changing dir at bash session start for tmux new panes/windows
 if [[ -n $TMUX ]]; then
 	__tmux_cd=$(tmux showenv _TMUX_CD 2>/dev/null)
 	if (( $? == 0 )) && [[ -n $__tmux_cd ]]; then
-		__tmux_cd=$(
-			printf '%s' "$__tmux_cd" | perl -pe 's/^_TMUX_CD=//' 2>/dev/null
-		)
-		if (( $? == 0 )) && [[ -n $__tmux_cd ]] && [[ -d $__tmux_cd ]]; then
+		__tmux_cd=${__tmux_cd#_TMUX_CD=}
+		(( $? == 0 )) && [[ -n $__tmux_cd ]] && [[ -d $__tmux_cd ]] &&
 			cd -- "$__tmux_cd"
-		fi
 	fi
 	unset __tmux_cd
 fi
 
-__relative_path=`__read_from_coproc get-relative-path "$PWD" "$USER" "$HOME"`
-[[ -n $__relative_path ]] && cd -- "$__relative_path"
-unset __relative_path
 
-if [[ -n $VTE_VERSION ]]; then
-	trap '__custom_vte_prompt_command "${BASH_COMMAND%% *}"' DEBUG
+__docker_dev_pattern="^/mnt/([0-9A-Za-z_-]+)/docker/${USER}-dev(/|$)"
+
+__relative_path_patterns=(
+	"^/run/media/${USER}/([0-9A-Za-z_-]+)/(home/)?${USER}(/|$)"
+	"^/media/${USER}/([0-9A-Za-z_-]+)/(home/)?${USER}(/|$)"
+	"^/media/([0-9A-Za-z_-]+)/(home/)?${USER}/(/|$)"
+	"^/mnt/([0-9A-Za-z_-]+)/(home/)?${USER}(/|$)"
+	"$__docker_dev_pattern"
+	"^/usr/home/${USER}(/|$)"
+)
+
+for pattern in "${__relative_path_patterns[@]}"; do
+	[[ $PWD =~ $pattern ]] || continue
+	__pwd_inode=$(stat -c %i -- "$PWD")
+
+	__to_cd=$({
+		TAIL=${PWD:${#BASH_REMATCH[0]}}
+		MNT_NAME=${BASH_REMATCH[1]}
+		[[ -n $TAIL ]] && TAIL=/$TAIL
+
+		NEW_WD=$(
+			[[ $PWD =~ $__docker_dev_pattern ]] &&
+			printf '%s%s' "$HOME" "$TAIL" ||
+			printf '%s/%s%s' "$HOME" "$MNT_NAME" "$TAIL"
+		)
+
+		if [[ ! -d $NEW_WD ]] ||
+		(( $__pwd_inode != $(stat -c %i -- "$NEW_WD") )); then
+			printf '✗'
+			return 0
+		fi
+
+		SHORT_NEW_WD=${HOME}${TAIL}
+
+		if [[ -d "$SHORT_NEW_WD" ]] &&
+		(( $__pwd_inode == $(stat -c %i -- "$SHORT_NEW_WD") )); then
+			printf '%s' "$SHORT_NEW_WD"
+		else
+			printf '%s' "$NEW_WD"
+		fi
+	})
+
+	break
+done
+
+if [[ $__to_cd == '✗' ]]; then
+	:
+elif [[ -n $__to_cd ]]; then
+	cd -- "$__to_cd"
+elif (( ${#PWD} > ${#HOME} )) && [[ $PWD =~ ^$HOME ]]; then
+	__to_cd=$({
+		WD_TAIL=${PWD:$((${#HOME} + 1))}
+		[[ -z $WD_TAIL ]] && return 0
+
+		IFS='/' read -r -a WD_TAIL_A <<< "$WD_TAIL"
+		WD_TAIL_A=(${WD_TAIL_A[@]:1})
+
+		WD_SLICED=${HOME}$(printf '/%s' "${WD_TAIL_A[@]}")
+		[[ $WD_SLICED == ${HOME}/ ]] && WD_SLICED=$HOME
+
+		[[ -z $__pwd_inode ]] && __pwd_inode=$(stat -c %i -- "$PWD")
+
+		if [[ ! -d $WD_SLICED ]] ||
+		(( $__pwd_inode != $(stat -c %i -- "$WD_SLICED") )); then
+			return 0
+		fi
+
+		printf '%s' "$WD_SLICED"
+	})
+
+	[[ -n $__to_cd ]] && cd -- "$__to_cd"
 fi
 
+unset __docker_dev_pattern __relative_path_patterns __pwd_inode __to_cd
+
+[[ -n $VTE_VERSION ]] &&
+	trap '__custom_vte_prompt_command "${BASH_COMMAND%% *}"' DEBUG
+
+declare -A __PERMISSION
+__PERMISSION[COLOR]=$(
+	(( $UID == 0 )) &&
+		printf '%b' "${__COLOR[RED]}" ||
+		printf '%b' "${__COLOR[GREEN]}"
+)
+__PERMISSION[MARK]=$(
+	printf '%b%s%b' "${__PERMISSION[COLOR]}" "$(
+		(( $UID == 0 )) && echo 'α' || echo 'λ'
+	)" "${__COLOR[RESET]}"
+)
+
 prompt_command() {
-	PS1=$(__read_from_coproc get-ps1 \
-		"$USER" "$__UID" "$HOME" "$PWD" "$LOCAL_HOSTNAME" \
-		"$VIRTUAL_ENV" "$COLUMNS" "$?")
+	local RETVAL=$?
+
+	local PWD_VIEW=$(
+		[[ $PWD =~ ^$HOME ]] &&
+		printf '~%s' "${PWD#$HOME}" ||
+		printf  '%s' "$PWD"
+	)
+
+	# Detecting remote mount point
+	local REMOTE_VIEW=$({
+		DF=$(df -l -T -- "$PWD" 2>/dev/null)
+		if (( $? == 1 )); then # works on gnu/linux
+			:
+		else
+			# works on freebsd
+			REG=$'^[^\n]+\n'"[^ ]+[ ]+fusefs(\.|[ ]+)"
+			[[ $DF =~ $REG ]] || return 0
+		fi
+		printf ' (%bremote%b)' "${__COLOR[RED]}" "${__COLOR[RESET]}"
+	})
+
+	local PYVENV_VIEW=$(
+		[[ -n $VIRTUAL_ENV ]] && printf '(pyvenv: %b%s%b) ' \
+			"${__COLOR[MAGENTA]}" "${VIRTUAL_ENV##*/}" "${__COLOR[RESET]}"
+	)
+
+	local PS1_PRE=$(
+		printf '%s%b%b%s%s%b %b%s%b@%b%s%b:' \
+			"$PYVENV_VIEW" \
+			\
+			"${__COLOR[BOLD]}" "$(
+				(( $RETVAL == 0 )) &&
+					printf '%b' "${__COLOR[GREEN]}" ||
+					printf '%b' "${__COLOR[RED]}"
+			)" "$(
+				(( $RETVAL == 0 )) && echo '✓' || echo '✗'
+			)" "$(
+				(( $RETVAL != 0 )) && printf '%d' "$RETVAL"
+			)" "${__COLOR[RESET]}" \
+			\
+			"${__PERMISSION[COLOR]}" "$USER" "${__COLOR[RESET]}" \
+			"${__COLOR[YELLOW]}" "$LOCAL_HOSTNAME" "${__COLOR[RESET]}"
+	)
+
+	local result=$(
+		printf '%b%b%s%b%b' "$PS1_PRE" \
+			"${__COLOR[BLUE]}" "$PWD_VIEW" "${__COLOR[RESET]}" "$REMOTE_VIEW"
+	)
+
+	local PS1_PLAIN=${result//$__COLOR_PATTERN/}
+
+	if (( ${#PS1_PLAIN} > $COLUMNS )); then
+		local MIN=16
+		local pwd_chars_count=$(( ${#PS1_PLAIN} - $COLUMNS + 1 ))
+		local PWD_VIEW_PLAIN=${PWD_VIEW//$__COLOR_PATTERN/}
+		local DIFF=$(( ${#PWD_VIEW_PLAIN} - $pwd_chars_count ))
+
+		(( $DIFF < $MIN )) &&
+			local pwd_chars_count=$(( $pwd_chars_count + ($DIFF - $MIN) ))
+
+		local SHRINKED_PWD_VIEW=$(
+			(( ${#PWD_VIEW_PLAIN} > $MIN )) && printf '…'
+			printf '%s' "${PWD_VIEW:$pwd_chars_count}"
+		)
+
+		local result=$(
+			printf '%b%b%s%b%b' "$PS1_PRE" \
+				"${__COLOR[BLUE]}" "$SHRINKED_PWD_VIEW" "${__COLOR[RESET]}" \
+				"$REMOTE_VIEW"
+		)
+
+		local PS1_PLAIN=${result//$__COLOR_PATTERN/}
+	fi
+
+	till_eol_cols=$(( $COLUMNS - ${#PS1_PLAIN} - 1 ))
+	(( $till_eol_cols < 0 )) && till_eol_cols=0
+
+
+	PS1=$(
+		printf '%s' "$result"
+		(( $till_eol_cols > 0 )) && printf ' ' &&
+			eval $(echo printf '"─%.0s"' {1..$till_eol_cols})
+		printf '\n%s ' "${__PERMISSION[MARK]}"
+	)
 
 	[[ -n $VTE_VERSION ]] && __custom_vte_prompt_command
 }
@@ -125,7 +293,13 @@ prompt_command() {
 PROMPT_COMMAND=prompt_command
 
 # set new b/w prompt (will be overwritten in 'prompt_command' later)
-PS1=`__read_from_coproc get-static-ps1 "$__UID" "$LOCAL_HOSTNAME"`
+PS1=$(
+	printf '%b\\u%b@%b%s%b:%b\\w%b\n%b ' \
+		"${__PERMISSION[COLOR]}" "${__COLOR[RESET]}" \
+		"${__COLOR[YELLOW]}" "$LOCAL_HOSTNAME" "${__COLOR[RESET]}" \
+		"${__COLOR[BLUE]}" "${__COLOR[RESET]}" \
+		"${__PERMISSION[MARK]}"
+)
 
 # this is for delete words by ^W
 tty -s && stty werase ^- 2>/dev/null
@@ -134,32 +308,19 @@ bind 'set show-all-if-ambiguous on'
 bind '"\C-n":menu-complete'
 bind '"\C-p":menu-complete-backward'
 
-# silently spawn an application in background
+# see .bash_aliases
 _burp_completion() {
-	local cur=${COMP_WORDS[COMP_CWORD]}
-	COMPREPLY=($(compgen -A function -abck -- "$cur"))
+	COMPREPLY=($(compgen -A function -abck -- "${COMP_WORDS[COMP_CWORD]}"))
 }
-complete -F _burp_completion -o default burp
+complete -o default -F _burp_completion burp
 
-# pip bash completion start
 _pip_completion() {
-	COMPREPLY=($( \
+	COMPREPLY=($(
 		COMP_WORDS="${COMP_WORDS[*]}" COMP_CWORD=$COMP_CWORD \
-		PIP_AUTO_COMPLETE=1 $1))
+		PIP_AUTO_COMPLETE=1 $1
+	))
 }
 complete -o default -F _pip_completion pip
-# pip bash completion end
-
-if [[ -z $_JAVA_OPTIONS ]]; then
-	export _JAVA_OPTIONS='
-		-Dawt.useSystemAAFontSettings=on
-		-Dswing.aatext=true
-		-Dswing.defaultlaf=com.sun.java.swing.plaf.gtk.GTKLookAndFeel
-		-Dswing.crossplatformlaf=com.sun.java.swing.plaf.gtk.GTKLookAndFeel
-	'
-fi
-
-[[ -z $_JAVA_AWT_WM_NONREPARENTING ]] && export _JAVA_AWT_WM_NONREPARENTING=1
 
 [[ -f ~/.bash_aliases ]] && . ~/.bash_aliases
 
