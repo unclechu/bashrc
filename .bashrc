@@ -98,6 +98,7 @@ LOCAL_HOSTNAME=$(
 	[[ -f ~/.hostname ]] && cat ~/.hostname || printf '%s' "$HOSTNAME"
 )
 
+
 # changing dir at bash session start for tmux new panes/windows
 if [[ -n $TMUX ]]; then
 	__tmux_cd=$(tmux showenv _TMUX_CD 2>/dev/null)
@@ -301,6 +302,7 @@ PS1=$(
 		"${__COLOR[BLUE]}" "${__COLOR[RESET]}" \
 		"${__PERMISSION[MARK]}"
 )
+
 
 # this is for delete words by ^W
 tty -s && stty werase ^- 2>/dev/null
