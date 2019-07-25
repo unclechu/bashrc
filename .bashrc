@@ -185,6 +185,7 @@ fi
 
 unset __docker_dev_pattern __relative_path_patterns __pwd_inode __to_cd
 
+
 [[ -n $VTE_VERSION ]] &&
 	trap '__custom_vte_prompt_command "${BASH_COMMAND%% *}"' DEBUG
 
