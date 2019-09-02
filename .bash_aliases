@@ -34,6 +34,7 @@ alias tmuxs=$'printf \'/tmp/%s-tmux-%s\' "`whoami`" '
 # tmux shortcuts
 alias tm=tmux
 alias tmsh=tmuxsh
+alias tma='tm a 2>/dev/null || tm new -s main'
 
 # shortcut for gpaste cli
 alias gp=$(
