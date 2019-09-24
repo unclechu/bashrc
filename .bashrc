@@ -38,22 +38,24 @@ __COLOR_PATTERN='\\\[[[:cntrl:]]\[[[:digit:]][[:digit:]][[:digit:]]m\\\]'
 	export __TERM_NAME_PREFIX='termite | '
 
 if [[ -n $VTE_VERSION ]]; then
-	. '/usr/local/etc/profile.d/vte.sh' 2>/dev/null ||
-		. '/etc/profile.d/vte.sh' 2>/dev/null
+	if [[ -z $VIMRUNTIME ]]; then
+		. '/usr/local/etc/profile.d/vte.sh' 2>/dev/null ||
+			. '/etc/profile.d/vte.sh' 2>/dev/null
 
-	if (( $? != 0 )); then
-		echo '[ERROR] vte.sh not found!' >&2
-		__vte_prompt_command() { return 1; }
-	fi
-
-	__custom_vte_prompt_command() {
-		local prompt=$(__vte_prompt_command 2>/dev/null)
-
-		if (( $? == 0 )); then
-			local cmd=$([[ -n $1 ]] && printf '%s | ' "$1")
-			printf '%s' "${prompt/0;/0;${__TERM_NAME_PREFIX}${cmd}}"
+		if (( $? != 0 )); then
+			echo '[ERROR] vte.sh not found!' >&2
+			__vte_prompt_command() { return 1; }
 		fi
-	}
+
+		__custom_vte_prompt_command() {
+			local prompt=$(__vte_prompt_command 2>/dev/null)
+
+			if (( $? == 0 )); then
+				local cmd=$([[ -n $1 ]] && printf '%s | ' "$1")
+				printf '%s' "${prompt/0;/0;${__TERM_NAME_PREFIX}${cmd}}"
+			fi
+		}
+	fi
 
 	export TERM=screen-256color
 
@@ -187,7 +189,7 @@ fi
 unset __docker_dev_pattern __relative_path_patterns __pwd_inode __to_cd
 
 
-[[ -n $VTE_VERSION ]] &&
+[[ -n $VTE_VERSION && -z $VIMRUNTIME ]] &&
 	trap '__custom_vte_prompt_command "${BASH_COMMAND%% *}"' DEBUG
 
 declare -A __PERMISSION
@@ -294,7 +296,7 @@ prompt_command() {
 		printf '\n%s ' "${__PERMISSION[MARK]}"
 	)
 
-	[[ -n $VTE_VERSION ]] && __custom_vte_prompt_command
+	[[ -n $VTE_VERSION && -z $VIMRUNTIME ]] && __custom_vte_prompt_command
 }
 
 # set prompt command (title update and color prompt)
