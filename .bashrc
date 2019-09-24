@@ -224,13 +224,19 @@ prompt_command() {
 		printf ' (%bremote%b)' "${__COLOR[RED]}" "${__COLOR[RESET]}"
 	})
 
+	local NIX_SHELL_VIEW=$(
+		[[ -n $IN_NIX_SHELL ]] &&
+			printf '(%bnix-shell%b) ' "${__COLOR[BLUE]}" "${__COLOR[RESET]}"
+	)
+
 	local PYVENV_VIEW=$(
 		[[ -n $VIRTUAL_ENV ]] && printf '(pyvenv: %b%s%b) ' \
 			"${__COLOR[MAGENTA]}" "${VIRTUAL_ENV##*/}" "${__COLOR[RESET]}"
 	)
 
 	local PS1_PRE=$(
-		printf '%s%b%b%s%s%b %b%s%b@%b%s%b:' \
+		printf '%s%s%b%b%s%s%b %b%s%b@%b%s%b:' \
+			"$NIX_SHELL_VIEW" \
 			"$PYVENV_VIEW" \
 			\
 			"${__COLOR[BOLD]}" "$(
