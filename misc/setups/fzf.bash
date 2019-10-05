@@ -9,5 +9,11 @@ export FZF_DEFAULT_COMMAND='
 		-o -type l -print \
 		| sed s/^..//
 '
-. /usr/share/fzf/shell/key-bindings.bash
+
+if [[ -f $HOME/.fzf.bash ]]; then
+	. "$HOME/.fzf.bash"
+else
+	. /usr/share/fzf/shell/key-bindings.bash
+fi
+
 bind '"\ec": nop'
