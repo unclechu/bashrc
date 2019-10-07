@@ -319,19 +319,11 @@ bind 'set show-all-if-ambiguous on'
 bind '"\C-n":menu-complete'
 bind '"\C-p":menu-complete-backward'
 
-# see .bash_aliases
+# see .bash_aliases for "burp" command
 _burp_completion() {
 	COMPREPLY=($(compgen -A function -abck -- "${COMP_WORDS[COMP_CWORD]}"))
 }
 complete -o default -F _burp_completion burp
-
-_pip_completion() {
-	COMPREPLY=($(
-		COMP_WORDS="${COMP_WORDS[*]}" COMP_CWORD=$COMP_CWORD \
-		PIP_AUTO_COMPLETE=1 $1
-	))
-}
-complete -o default -F _pip_completion pip
 
 [[ -f ~/.bash_aliases ]] && . ~/.bash_aliases
 
