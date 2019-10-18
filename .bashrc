@@ -236,17 +236,15 @@ prompt_command() {
 			"${__COLOR[MAGENTA]}" "${VIRTUAL_ENV##*/}" "${__COLOR[RESET]}"
 	)
 
+	local CURRENT_HISTORY_ITEM=$(history 1)
+
 	local ABOUT_FINAL_NEWLINE=$(
 		# see https://stackoverflow.com/a/2575525
-		exec </dev/tty
-		OLDSTTY=$(stty -g)
-		stty raw -echo min 0
-		>/dev/tty echo -en '\033[6n' # request cursor position
-		IFS=';' read -r -d R -a CURPOS # reading cursor position
-		stty "$OLDSTTY"
-		echo <&-
+		>/dev/tty echo -en '\E[6n'
+		</dev/tty read -sdR CURPOS
+		CURCOL=${CURPOS#*;}
 
-		if (( ${CURPOS[1]} > 1 )); then
+		if (( $CURCOL > 1 )); then
 			MSG=(
 				"${__COLOR[ITALIC]}${__COLOR[RED]}"
 				$'↴\nThere was no final newline!\n'
