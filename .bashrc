@@ -237,10 +237,16 @@ prompt_command() {
 	)
 
 	local ABOUT_FINAL_NEWLINE=$(
+		# see https://stackoverflow.com/a/2575525
+		exec </dev/tty
+		OLDSTTY=$(stty -g)
+		stty raw -echo min 0
 		>/dev/tty echo -en '\033[6n' # request cursor position
-		IFS= read -s -r -d R -a CURPOS # reading cursor position
-		CURCOL=${CURPOS##*;} # extracting column
-		if (( $CURCOL > 1 )); then
+		IFS=';' read -r -d R -a CURPOS # reading cursor position
+		stty "$OLDSTTY"
+		echo <&-
+
+		if (( ${CURPOS[1]} > 1 )); then
 			MSG=(
 				"${__COLOR[ITALIC]}${__COLOR[RED]}"
 				$'↴\nThere was no final newline!\n'
