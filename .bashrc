@@ -236,6 +236,20 @@ prompt_command() {
 			"${__COLOR[MAGENTA]}" "${VIRTUAL_ENV##*/}" "${__COLOR[RESET]}"
 	)
 
+	local ABOUT_FINAL_NEWLINE=$(
+		>/dev/tty echo -en '\033[6n' # request cursor position
+		IFS= read -s -r -d R -a CURPOS # reading cursor position
+		CURCOL=${CURPOS##*;} # extracting column
+		if (( $CURCOL > 1 )); then
+			MSG=(
+				"${__COLOR[ITALIC]}${__COLOR[RED]}"
+				$'↴\nThere was no final newline!\n'
+				"${__COLOR[RESET]}"
+			)
+			printf '%b' "${MSG[@]}"
+		fi
+	)
+
 	local PS1_PRE=$(
 		printf '%s%s%b%b%s%s%b %b%s%b@%b%s%b:' \
 			"$NIX_SHELL_VIEW" \
@@ -288,9 +302,8 @@ prompt_command() {
 	till_eol_cols=$(( $COLUMNS - ${#PS1_PLAIN} - 1 ))
 	(( $till_eol_cols < 0 )) && till_eol_cols=0
 
-
 	PS1=$(
-		printf '%s' "$result"
+		printf '%b' "${__COLOR[RESET]}" "$ABOUT_FINAL_NEWLINE" "$result"
 		(( $till_eol_cols > 0 )) && printf ' ' &&
 			eval $(echo printf '"─%.0s"' {1..$till_eol_cols})
 		printf '\n%s ' "${__PERMISSION[MARK]}"
