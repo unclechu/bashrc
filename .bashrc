@@ -239,10 +239,13 @@ prompt_command() {
 	local CURRENT_HISTORY_ITEM=$(history 1)
 
 	local ABOUT_FINAL_NEWLINE=$(
-		# see https://stackoverflow.com/a/2575525
-		>/dev/tty echo -en '\E[6n'
-		</dev/tty read -sdR CURPOS
-		CURCOL=${CURPOS#*;}
+		# See https://stackoverflow.com/a/2575525
+		# Requesting cursor position in background with delay to reduce glitches
+		# when reading is being late and response is shown on the screen
+		# instead of being read.
+		{ sleep .05s; >/dev/tty echo -en '\E[6n'; } & # Request cursor position
+		</dev/tty read -sdR CURPOS # Retrieve cursor position
+		CURCOL=${CURPOS#*;} # Extract cursor column
 
 		if (( $CURCOL > 1 )); then
 			MSG=(
