@@ -36,6 +36,9 @@ alias tm=tmux
 alias tmsh=tmuxsh
 alias tma='tm a 2>/dev/null || tm new -s main'
 
+# shred with my favorite options
+alias shreddy='shred -vufz -n10'
+
 # shortcut for gpaste cli
 alias gp=$(
 	([[ -x `which gpaste-client 2>/dev/null` ]] && echo 'gpaste-client' ||
