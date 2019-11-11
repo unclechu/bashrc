@@ -41,18 +41,20 @@ alias shreddy='shred -vufz -n10'
 
 # shortcut for gpaste cli
 alias gp=$(
-	([[ -x `which gpaste-client 2>/dev/null` ]] && echo 'gpaste-client' ||
-	([[ -x `which gpaste        2>/dev/null` ]] && echo 'gpaste'        ||
-		echo 'echo gpaste not found >&2 ; false'))
+	if   [[ -x `which gpaste-client 2>/dev/null` ]]; then echo 'gpaste-client'
+	elif [[ -x `which gpaste        2>/dev/null` ]]; then echo 'gpaste'
+	else echo 'echo gpaste not found >&2 ; false'
+	fi
 )
 
 # any available vi-like editor
 alias v=$(
-	([[ -n $EDITOR ]] && printf '%s' "$EDITOR"      ||
-	([[ -x `which nvim 2>/dev/null` ]] && echo nvim ||
-	([[ -x `which  vim 2>/dev/null` ]] && echo  vim ||
-	([[ -x `which  vi  2>/dev/null` ]] && echo  vi  ||
-		echo 'echo not found any implementation of vi >&2 ; false'))))
+	if   [[ -n $EDITOR ]]; then printf '%s' "$EDITOR"
+	elif [[ -x `which nvim 2>/dev/null` ]]; then echo nvim
+	elif [[ -x `which  vim 2>/dev/null` ]]; then echo  vim
+	elif [[ -x `which  vi  2>/dev/null` ]]; then echo  vi
+	else echo 'echo not found any implementation of vi >&2 ; false'
+	fi
 )
 
 # HASKell Interactive (ghci from default stackage LTS)
@@ -62,17 +64,18 @@ alias haski='stack exec ghci --'
 .x() {
 	local c=
 	if (( $# != 1 )); then
-		echo 'incorrect arguments count' >&2
+		>&2 printf 'Incorrect arguments count (must be 1, got %d)!\n' "$#"
 		return 1
-	elif [[ $1 != $[$1] ]]; then
-		echo 'incorrect go up level argument' >&2
+	elif ! [[ $1 =~ ^[0-9]+$ ]]; then
+		>&2 printf 'Incorrect go up level argument '
+		>&2 printf '(must be an integer, got "%s")!\n' "$1"
 		return 1
 	else
-		c=$1
+		c=$1; shift || return
 	fi
-	local command='cd '
+	local command; command='cd '
 	for i in $(seq -- "$c"); do
-		command="${command}../"
+		command=${command}../
 	done
 	$command
 	return $?
@@ -81,45 +84,45 @@ alias haski='stack exec ghci --'
 # silent process in background
 burp() {
 	if (( $# < 1 )); then
-		echo 'not enough arguments to burp' >&2
+		>&2 echo 'Not enough arguments to "burp"!'
 		return 1
 	fi
-	local app=$1
-	shift
-	"$app" "$@" 0</dev/null &>/dev/null &
+	local APP; APP=$1; shift || return
+	"$APP" "$@" 0</dev/null &>/dev/null &
 	return $?
 }
 
 # prints last command as string
 lastc() {
-	local last=$(history 2 | sed -e '$d')
-	perl -e '$_ = shift; chomp; s/^[ 0-9]+[ ]+//; print' -- "$last"
-	return $?
+	local last; last=$(history 2 | sed -e '$d') || return
+	perl -e '$_ = shift; chomp; s/^[ 0-9]+[ ]+//; print' -- "$last" || return
 }
 
 # 'mkdir' and 'cd' to it
 mkdircd() {
-	mkdir "$@" || return $?
+	mkdir "$@" || return
 	local dir=
 	for arg in "$@"; do
-		[[ ${arg:0:1} != '-' ]] && dir=$arg
+		if [[ ${arg:0:1} != '-' ]]; then dir=$arg; fi
 	done
 	if [[ -n $dir && -d $dir ]]; then
-		cd -- "$dir"
-		return $?
+		cd -- "$dir" || return
 	fi
 }
 
 # helper to remove TMUX variable from running application (support aliases)
 notm() {
-	(( $# == 0 )) && { echo 'no app specified to run' >&2; return 1; }
-	local app=$1; shift
-	local aliased=${BASH_ALIASES[$app]}
+	if (( $# == 0 )); then
+		>&2 echo 'No app specified to run!'
+		return 1
+	fi
+	local APP; APP=$1; shift || return
+	local ALIASED; ALIASED=${BASH_ALIASES[$APP]}
 	export TMUX=
-	if [[ -n $aliased ]]; then
-		bash -c $". ~/.bash_aliases && $aliased \"\$@\"" -- "$@"
+	if [[ -n $ALIASED ]]; then
+		bash -c $". ~/.bash_aliases && $ALIASED \"\$@\"" -- "$@"
 	else
-		"$app" "$@"
+		"$APP" "$@"
 	fi
 	return $?
 }

@@ -1,1 +1,1 @@
-export SDKMAN_DIR="$HOME/.sdkman"
+export SDKMAN_DIR=$HOME/.sdkman
