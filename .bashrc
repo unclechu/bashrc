@@ -220,7 +220,7 @@ __PERMISSION[MARK]=$(
 )
 
 prompt_command() {
-	local RETVAL; RETVAL=$?
+	local RETVAL=$?
 
 	local PWD_VIEW; PWD_VIEW=$(
 		if [[ $PWD =~ ^$HOME ]]; then
@@ -255,8 +255,6 @@ prompt_command() {
 				"${__COLOR[MAGENTA]}" "${VIRTUAL_ENV##*/}" "${__COLOR[RESET]}"
 		fi
 	)
-
-	local CURRENT_HISTORY_ITEM; CURRENT_HISTORY_ITEM=$(history 1)
 
 	local ABOUT_FINAL_NEWLINE; ABOUT_FINAL_NEWLINE=$(
 		# See https://stackoverflow.com/a/2575525
