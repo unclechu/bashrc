@@ -13,6 +13,7 @@ fi
 alias la='ls -lah'
 alias al='ls -lah'
 alias  l='ls -lah'
+alias  L='ls -lAh'
 
 # git stuff
 alias gits='git status'
