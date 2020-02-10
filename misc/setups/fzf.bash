@@ -1,6 +1,7 @@
 export FZF_DEFAULT_COMMAND='
 	find . \
-		\( -depth -path "*/\.git/*" -a -not -path "*/\.git/info/*" \) -prune \
+		-depth \
+		\( -path "*/\.git/*" -a -not -path "*/\.git/info/*" \) -prune \
 		-o -path "*/\.stack-work/*" -prune \
 		-o -path "*/\.cabal/*" -prune \
 		-o -path "*/node_modules/*" -prune \
