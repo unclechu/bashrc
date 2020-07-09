@@ -14,17 +14,46 @@ nix-shell --run wenzels-bash
 
 ```nix
 let
-  wenzels-bash = fetchGit {
+  wenzels-bash-src = fetchGit {
     url = "https://github.com/unclechu/bashrc.git";
     rev = "ffffffffffffffffffffffffffffffffffffffff"; # Git commit hash
     ref = "master";
   };
+
+  wenzels-bash = import wenzels-bash-src {};
 in
 {
   environment.shells         = [ wenzels-bash ];
   environment.systemPackages = [ wenzels-bash ];
   users.users.john.shell     =   wenzels-bash  ;
 }
+```
+
+#### Use with my Neovim config
+
+See https://github.com/unclechu/neovimrc
+
+```nix
+let
+  wenzels-neovim-src = fetchGit {
+    url = "https://github.com/unclechu/neovimrc.git";
+    rev = "ffffffffffffffffffffffffffffffffffffffff"; # Git commit hash
+    ref = "master";
+  };
+
+  wenzels-bash-src = fetchGit {
+    url = "https://github.com/unclechu/bashrc.git";
+    rev = "ffffffffffffffffffffffffffffffffffffffff"; # Git commit hash
+    ref = "master";
+  };
+
+  wenzels-bash = import wenzels-bash-src {};
+
+  wenzels-neovim = import "${wenzels-neovim-src}/nix/apps/neovim.nix" {
+    bashEnvFile = "${wenzels-bash.dir}/.bash_aliases";
+  };
+in
+{ environment.systemPackages = [ wenzels-bash wenzels-neovim ]; }
 ```
 
 ##### Also the scripts
