@@ -126,7 +126,7 @@ wrapExecutable bash {
   shellPath = "/bin/${name}";
 
   inherit
-    bashRC dirEnvVarName
+    bashRC dir dirEnvVarName
     patched-bashrc patched-bashrc-file
     patched-aliases patched-aliases-file
     vte-sh-file;
