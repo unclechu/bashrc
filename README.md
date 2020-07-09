@@ -29,7 +29,13 @@ in
 
 ##### Also the scripts
 
-**TODO**
+```sh
+nix-shell -E '(import <nixpkgs> {}).mkShell {buildInputs=[(import nix/scripts/timer.nix {})];}' --run 'timer --help'
+```
+
+```sh
+nix-shell -E '(import <nixpkgs> {}).mkShell {buildInputs=[(import nix/scripts/hsc2hs-pipe.nix {})];}' --run 'hsc2hs-pipe --help'
+```
 
 ### Other GNU/Linux distributions
 
