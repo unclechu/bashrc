@@ -8,6 +8,10 @@ args@
 , name   ? defaultName
 , bashRC ? ./.
 
+# In NixOS you set "EDITOR" environment variable in your "configuration.nix"
+# so you might not want an override from this config (in this case leave this argument default).
+, overrideEditorEnvVar ? false
+
 # First argument is "dirEnvVarName".
 # Usage example:
 #   {
@@ -32,6 +36,7 @@ args@
     in
       kebab2snake (toUpper (dirSuffix (args.name or defaultName)))
 }:
+assert builtins.isBool overrideEditorEnvVar;
 assert builtins.isFunction miscSetups;
 assert builtins.isFunction miscAliases;
 let
@@ -40,7 +45,7 @@ in
 assert utils.valueCheckers.isNonEmptyString name;
 assert utils.valueCheckers.isNonEmptyString dirEnvVarName;
 let
-  inherit (utils) esc wrapExecutable;
+  inherit (utils) esc lines unlines wrapExecutable;
 
   dir = pkgs.runCommand (dirSuffix name) {} ''
     set -Eeuo pipefail
@@ -51,21 +56,45 @@ let
 
   vte-sh-file = "${pkgs.vte}/etc/profile.d/vte.sh";
 
-  patched-bashrc = builtins.replaceStrings [
-    "'/usr/local/etc/profile.d/vte.sh'"
-    "'/etc/profile.d/vte.sh'"
-    "if [[ -f ~/.bash_aliases ]]; then . ~/.bash_aliases; fi"
-  ] [
-    (esc vte-sh-file)
-    (esc vte-sh-file)
-    ''
-      . "''$${dirEnvVarName}/.bash_aliases"
+  patched-bashrc =
+    let
+      withReplaces =
+        builtins.replaceStrings [
+          "'/usr/local/etc/profile.d/vte.sh'"
+          "'/etc/profile.d/vte.sh'"
+          "if [[ -f ~/.bash_aliases ]]; then . ~/.bash_aliases; fi"
+        ] [
+          (esc vte-sh-file)
+          (esc vte-sh-file)
+          ''
+            . "''$${dirEnvVarName}/.bash_aliases"
 
-      # miscellaneous setups
-      ${miscSetups dirEnvVarName}
-      # end: miscellaneous setups
-    ''
-  ] (builtins.readFile "${bashRC}/.bashrc");
+            # miscellaneous setups
+            ${miscSetups dirEnvVarName}
+            # end: miscellaneous setups
+          ''
+        ] (builtins.readFile "${bashRC}/.bashrc");
+
+      withoutEditorOverride =
+        let
+          isPluginsImport = x: builtins.match ".*so.*'/plugins.vim'" x != null;
+          initial = { found = false; result = []; };
+
+          reducer = acc: line: acc // (
+            if ! acc.found && line == "export EDITOR=$(" then { found = true;  } else
+            if acc.found && line == ")"                  then { found = false; } else
+            if acc.found                                 then {                } else
+            { result = acc.result ++ [line]; }
+          );
+
+          result = builtins.foldl' reducer initial (lines withReplaces);
+          resultStr = unlines result.result;
+        in
+          assert result.found == false; # the block closed before end of the file
+          assert resultStr != withReplaces; # something was actually removed
+          resultStr;
+    in
+      if overrideEditorEnvVar then withReplaces else withoutEditorOverride;
 
   patched-aliases = ''
     ${builtins.readFile "${bashRC}/.bash_aliases"}
