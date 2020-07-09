@@ -3,7 +3,7 @@
 let
   utils-src = fetchGit {
     url = "https://github.com/unclechu/nix-utils.git";
-    rev = "8fbdc3c63404b58275b468aaf508d5c7c198fc4b"; # 17 June 2020
+    rev = "377b3b35a50d482b9968d8d19bcb98cc4c37d6bd"; # 9 July 2020
     ref = "master";
   };
 
