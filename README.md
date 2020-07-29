@@ -14,10 +14,13 @@ nix-shell --run wenzels-bash
 
 ```nix
 let
-  wenzels-bash-src = fetchGit {
-    url = "https://github.com/unclechu/bashrc.git";
+  pkgs = import <nixpkgs> {};
+
+  wenzels-bash-src = pkgs.fetchFromGitHub {
+    owner = "unclechu";
+    repo = "bashrc";
     rev = "ffffffffffffffffffffffffffffffffffffffff"; # Git commit hash
-    ref = "master";
+    sha256 = "0000000000000000000000000000000000000000000000000000";
   };
 
   wenzels-bash = import wenzels-bash-src {};
@@ -35,16 +38,18 @@ See https://github.com/unclechu/neovimrc
 
 ```nix
 let
-  wenzels-neovim-src = fetchGit {
-    url = "https://github.com/unclechu/neovimrc.git";
+  wenzels-neovim-src = pkgs.fetchFromGitHub {
+    owner = "unclechu";
+    repo = "neovimrc";
     rev = "ffffffffffffffffffffffffffffffffffffffff"; # Git commit hash
-    ref = "master";
+    sha256 = "0000000000000000000000000000000000000000000000000000";
   };
 
-  wenzels-bash-src = fetchGit {
-    url = "https://github.com/unclechu/bashrc.git";
+  wenzels-bash-src = pkgs.fetchFromGitHub {
+    owner = "unclechu";
+    repo = "bashrc";
     rev = "ffffffffffffffffffffffffffffffffffffffff"; # Git commit hash
-    ref = "master";
+    sha256 = "0000000000000000000000000000000000000000000000000000";
   };
 
   wenzels-bash = import wenzels-bash-src {};
