@@ -38,6 +38,8 @@ See https://github.com/unclechu/neovimrc
 
 ```nix
 let
+  pkgs = import <nixpkgs> {};
+
   wenzels-neovim-src = pkgs.fetchFromGitHub {
     owner = "unclechu";
     repo = "neovimrc";
