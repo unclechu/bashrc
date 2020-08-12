@@ -16,14 +16,12 @@ nix-shell --run wenzels-bash
 let
   pkgs = import <nixpkgs> {};
 
-  wenzels-bash-src = pkgs.fetchFromGitHub {
+  wenzels-bash = import (pkgs.fetchFromGitHub {
     owner = "unclechu";
     repo = "bashrc";
     rev = "ffffffffffffffffffffffffffffffffffffffff"; # Git commit hash
     sha256 = "0000000000000000000000000000000000000000000000000000";
-  };
-
-  wenzels-bash = import wenzels-bash-src {};
+  }) {};
 in
 {
   environment.shells         = [ wenzels-bash ];
@@ -47,18 +45,16 @@ let
     sha256 = "0000000000000000000000000000000000000000000000000000";
   };
 
-  wenzels-bash-src = pkgs.fetchFromGitHub {
+  wenzels-neovim = import "${wenzels-neovim-src}/nix/apps/neovim.nix" {
+    bashEnvFile = "${wenzels-bash.dir}/.bash_aliases";
+  };
+
+  wenzels-bash = import (pkgs.fetchFromGitHub {
     owner = "unclechu";
     repo = "bashrc";
     rev = "ffffffffffffffffffffffffffffffffffffffff"; # Git commit hash
     sha256 = "0000000000000000000000000000000000000000000000000000";
-  };
-
-  wenzels-bash = import wenzels-bash-src {};
-
-  wenzels-neovim = import "${wenzels-neovim-src}/nix/apps/neovim.nix" {
-    bashEnvFile = "${wenzels-bash.dir}/.bash_aliases";
-  };
+  }) {};
 in
 { environment.systemPackages = [ wenzels-bash wenzels-neovim ]; }
 ```
@@ -94,6 +90,61 @@ nix-shell -E '(import <nixpkgs> {}).mkShell {buildInputs=[(import nix/scripts/hs
    "$HOME/.config/bashrc/.bash_aliases"
    ```
 
+## Known issues
+
+### NixOS
+
+If you happen to run a regular Bash (e.g. by just running `nix-shell`, it will
+run default Bash) you may loose a lot of your `~/.bash_history` because of the
+default Bash history settings.
+
+In order to avoid this you may either run `nix-shell` with this `--command`
+option (in order to inherit your `$SHELL`):
+
+```sh
+nix-shell -p bash --command 'export SHELL="'"$SHELL"'" && "$SHELL"'
+```
+
+Or you can use the [Home Manager] in order to include [history-settings.bash] in
+your `.bashrc`. Like this in your `configuration.nix`:
+
+```nix
+let
+  pkgs = import <nixpkgs> {};
+
+  home-manager =
+    let
+      # ref "release-20.03", 5 July 2020
+      commit = "318bc0754ed6370cfcae13183a7f13f7aa4bc73f";
+    in
+      fetchTarball {
+        url = "https://github.com/rycee/home-manager/archive/${commit}.tar.gz";
+        sha256 = "0hgn85yl7gixw1adjfa9nx8axmlpw5y1883lzg3zigknx6ff5hsr";
+      };
+
+  wenzels-bash = import (pkgs.fetchFromGitHub {
+    owner = "unclechu";
+    repo = "bashrc";
+    rev = "ffffffffffffffffffffffffffffffffffffffff"; # Git commit hash
+    sha256 = "0000000000000000000000000000000000000000000000000000";
+  }) {};
+in
+{
+  imports = [
+    (import "${home-manager}/nixos")
+  ];
+
+  # … Other stuff in your "configuration.nix" …
+
+  home-manager.users.john.home.file.".bashrc".text = ''
+    . ${pkgs.lib.escapeShellArg wenzels-bash.history-settings-file-path}
+  '';
+}
+```
+
 ## Author
 
 Viacheslav Lotsmanov (2013–2020)
+
+[Home Manager]: https://github.com/rycee/home-manager
+[history-settings.bash]: history-settings.bash

@@ -29,6 +29,7 @@ args@
 , miscSetups  ? (_: "")
 , miscAliases ? (_: "")
 
+# "WENZELS_BASH_DIR" by default
 , dirEnvVarName ?
     let
       kebab2snake = builtins.replaceStrings ["-"] ["_"];
@@ -52,9 +53,14 @@ let
     mkdir -- "$out"
     cp -r -- ${esc "${bashRC}"}/misc/ "$out"
     cp -- ${esc patched-aliases-file} "$out/.bash_aliases"
+    cp -- ${esc history-settings-src-file-path} "$out"
   '';
 
   vte-sh-file = "${pkgs.vte}/etc/profile.d/vte.sh";
+
+  history-settings-relative-file-path = "history-settings.bash";
+  history-settings-src-file-path = "${bashRC}/${history-settings-relative-file-path}";
+  history-settings-src-file-contents = builtins.readFile history-settings-src-file-path;
 
   patched-bashrc =
     let
@@ -77,7 +83,7 @@ let
 
       withoutEditorOverride =
         let
-          isPluginsImport = x: builtins.match ".*so.*'/plugins.vim'" x != null;
+          # isPluginsImport = x: builtins.match ".*so.*'/plugins.vim'" x != null;
           initial = { found = false; result = []; };
 
           reducer = acc: line: acc // (
@@ -93,8 +99,30 @@ let
           assert result.found == false; # the block closed before end of the file
           assert resultStr != withReplaces; # something was actually removed
           resultStr;
+
+      inlineHistorySettings = src:
+        let
+          initial = { found = false; result = []; };
+          history-settings = lines history-settings-src-file-contents;
+
+          reducer = acc: line: acc // (
+            let
+              put = { found = false; result = acc.result ++ history-settings; };
+            in
+              if ! acc.found && line == "# history settings block {{{" then { found = true; } else
+              if   acc.found && line == "# history settings block }}}" then put               else
+              if   acc.found                                           then {}                else
+              { result = acc.result ++ [line]; }
+          );
+
+          result = builtins.foldl' reducer initial (lines src);
+          resultStr = unlines result.result;
+        in
+          assert result.found == false; # the block closed before end of the file
+          assert resultStr != withReplaces; # something was actually removed
+          resultStr;
     in
-      if overrideEditorEnvVar then withReplaces else withoutEditorOverride;
+      inlineHistorySettings (if overrideEditorEnvVar then withReplaces else withoutEditorOverride);
 
   patched-aliases = ''
     ${builtins.readFile "${bashRC}/.bash_aliases"}
@@ -124,6 +152,7 @@ wrapExecutable bash {
   args = [ "--rcfile" patched-bashrc-file ];
 } // {
   shellPath = "/bin/${name}";
+  history-settings-file-path = "${dir}/${history-settings-relative-file-path}";
 
   inherit
     bashRC dir dirEnvVarName

@@ -75,29 +75,21 @@ export EDITOR=$(
 	fi
 )
 
-# don't put duplicate lines in the history
-export HISTCONTROL=ignoreboth:erasedups
+# history settings block {{{
+__MY_BASH_CONFIG_DIR=$(dirname -- "${BASH_SOURCE[0]}") || exit
+. "$__MY_BASH_CONFIG_DIR"/history-settings.bash || exit
+unset __MY_BASH_CONFIG_DIR || exit
+# history settings block }}}
 
-# set history length
-HISTFILESIZE=1000000000
-HISTSIZE=1000000
-
-# append to the history file, don't overwrite it
-shopt -s histappend
 # check the window size after each command and,
 # if necessary, update the values of LINES and COLUMNS.
 shopt -s checkwinsize
 # correct minor errors in the spelling of a directory component in a cd command
 shopt -s cdspell
-# save all lines of a multiple-line command in the same history entry
-# (allows easy re-editing of multi-line commands).
-shopt -s cmdhist
 # cd to a directory by typing its name
 shopt -s autocd
 # regex-style pattern matching
 shopt -s extglob
-# show command from history before execute it
-shopt -s histverify
 
 LOCAL_HOSTNAME=$(
 	if [[ -f ~/.hostname ]]; then
