@@ -102,7 +102,7 @@ In order to avoid this you may either run `nix-shell` with this `--command`
 option (in order to inherit your `$SHELL`):
 
 ```sh
-nix-shell -p bash --command 'export SHELL="'"$SHELL"'" && "$SHELL"'
+nix-shell -p bash --command 'export SHELL='"'${SHELL//\'}'"' && "$SHELL"'
 ```
 
 Or you can use the [Home Manager] in order to include [history-settings.bash] in
