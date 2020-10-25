@@ -3,10 +3,10 @@
 
 shopt -s expand_aliases
 
-# `ls` stuff
-if [[ `uname` != FreeBSD ]]; then
+# "ls" stuff
+if [[ $(uname) != FreeBSD ]]; then
 	alias ls='ls --color=auto'
-	eval "`dircolors`"
+	eval "$(dircolors)"
 else
 	alias ls='ls -G'
 fi
@@ -26,11 +26,11 @@ alias gitds='git diff --staged'
 alias gitb='git branch | grep ^* | awk "{print \$2}"'
 alias gitbn='git branch'
 alias gitco='git checkout'
-alias gitpl='git pull origin `gitb`'
-alias gitph='git push origin `gitb`'
+alias gitpl='git pull origin -- "$(gitb)"'
+alias gitph='git push origin -- "$(gitb)"'
 
 # to generate tmux session socket file path based on username
-alias tmuxs=$'printf \'/tmp/%s-tmux-%s\' "`whoami`" '
+alias tmuxs=$'printf \'/tmp/%s-tmux-%s\' "$(whoami)" '
 
 # tmux shortcuts
 alias tm=tmux
@@ -42,8 +42,8 @@ alias shreddy='shred -vufz -n10'
 
 # shortcut for gpaste cli
 alias gp=$(
-	if   [[ -x `which gpaste-client 2>/dev/null` ]]; then echo 'gpaste-client'
-	elif [[ -x `which gpaste        2>/dev/null` ]]; then echo 'gpaste'
+	if   [[ -x $(which gpaste-client 2>/dev/null) ]]; then echo 'gpaste-client'
+	elif [[ -x $(which gpaste        2>/dev/null) ]]; then echo 'gpaste'
 	else echo 'echo gpaste not found >&2 ; false'
 	fi
 )
@@ -51,9 +51,9 @@ alias gp=$(
 # any available vi-like editor
 alias v=$(
 	if   [[ -n $EDITOR ]]; then printf '%s' "$EDITOR"
-	elif [[ -x `which nvim 2>/dev/null` ]]; then echo nvim
-	elif [[ -x `which  vim 2>/dev/null` ]]; then echo  vim
-	elif [[ -x `which  vi  2>/dev/null` ]]; then echo  vi
+	elif [[ -x $(which nvim 2>/dev/null) ]]; then echo nvim
+	elif [[ -x $(which  vim 2>/dev/null) ]]; then echo  vim
+	elif [[ -x $(which  vi  2>/dev/null) ]]; then echo  vi
 	else echo 'echo not found any implementation of vi >&2 ; false'
 	fi
 )
@@ -63,7 +63,7 @@ alias haski='stack exec ghci --'
 
 # go "$1" levels up
 .x() {
-	local c=
+	local c
 	if (( $# != 1 )); then
 		>&2 printf 'Incorrect arguments count (must be 1, got %d)!\n' "$#"
 		return 1
@@ -75,22 +75,23 @@ alias haski='stack exec ghci --'
 		c=$1; shift || return
 	fi
 	local command; command='cd '
+	local i
 	for i in $(seq -- "$c"); do
 		command=${command}../
 	done
 	$command
-	return $?
+	return
 }
 
 # silent process in background
 burp() {
 	if (( $# < 1 )); then
-		>&2 echo 'Not enough arguments to "burp"!'
+		>&2 echo 'Not enough arguments for "burp"!'
 		return 1
 	fi
 	local APP; APP=$1; shift || return
 	"$APP" "$@" 0</dev/null &>/dev/null &
-	return $?
+	return
 }
 
 # prints last command as string
@@ -102,7 +103,7 @@ lastc() {
 # 'mkdir' and 'cd' to it
 mkdircd() {
 	mkdir "$@" || return
-	local dir=
+	local dir arg
 	for arg in "$@"; do
 		if [[ ${arg:0:1} != '-' ]]; then dir=$arg; fi
 	done
@@ -125,5 +126,5 @@ notm() {
 	else
 		"$APP" "$@"
 	fi
-	return $?
+	return
 }
