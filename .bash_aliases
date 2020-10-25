@@ -40,6 +40,13 @@ alias tma='tm a 2>/dev/null || tm new -s main'
 # shred with my favorite options
 alias shreddy='shred -vufz -n10'
 
+# nix-shell with forwarded $SHELL
+alias nsh=$(
+	echo -n "nix-shell --command '"
+	echo -n $'export SHELL=\'"\'${SHELL//\\\'}\'"\' && "$SHELL"'
+	echo -n "'"
+)
+
 # shortcut for gpaste cli
 alias gp=$(
 	if   [[ -x $(which gpaste-client 2>/dev/null) ]]; then echo 'gpaste-client'
