@@ -55,6 +55,9 @@ alias gp=$(
 	fi
 )
 
+# Copy to system clipboard without any line breaks (“i” for “inline”).
+alias gpi='perl -pe chomp | gp'
+
 # any available vi-like editor
 alias v=$(
 	if   [[ -n $EDITOR ]]; then printf '%s' "$EDITOR"
@@ -81,12 +84,11 @@ alias haski='stack exec ghci --'
 	else
 		c=$1; shift || return
 	fi
-	local command; command='cd '
-	local i
-	for i in $(seq -- "$c"); do
-		command=${command}../
+	local cmd; cmd='cd '
+	for _ in $(seq -- "$c"); do
+		cmd=${cmd}../
 	done
-	$command
+	$cmd
 	return
 }
 
