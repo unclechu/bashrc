@@ -1,4 +1,4 @@
-{ pkgs ? import <nixpkgs> {}
+{ pkgs ? import nix/default-nixpkgs-pick.nix
 }:
 let
   wenzels-bash = import ./. { inherit pkgs; };

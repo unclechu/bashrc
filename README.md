@@ -30,7 +30,7 @@ in
 }
 ```
 
-#### Use with my Neovim config
+##### Use with my Neovim config
 
 See https://github.com/unclechu/neovimrc
 

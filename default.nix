@@ -1,5 +1,5 @@
 let
-  defaultPkgs = import <nixpkgs> {};
+  defaultPkgs = import nix/default-nixpkgs-pick.nix;
   defaultName = "wenzels-bash";
   dirSuffix   = name: "${name}-dir";
 in
@@ -40,9 +40,7 @@ args@
 assert builtins.isBool overrideEditorEnvVar;
 assert builtins.isFunction miscSetups;
 assert builtins.isFunction miscAliases;
-let
-  utils = import nix/utils.nix { inherit pkgs; };
-in
+let utils = import nix/utils.nix { inherit pkgs; }; in
 assert utils.valueCheckers.isNonEmptyString name;
 assert utils.valueCheckers.isNonEmptyString dirEnvVarName;
 let
