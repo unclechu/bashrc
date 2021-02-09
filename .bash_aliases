@@ -23,7 +23,7 @@ alias gitcm='git commit -m'
 alias gita='git add'
 alias gitd='git diff'
 alias gitds='git diff --staged'
-alias gitb='git branch | grep ^* | awk "{print \$2}"'
+alias gitb='git branch | grep ^* | cut -d " " -f 2'
 alias gitbn='git branch'
 alias gitco='git checkout'
 alias gitpl='git pull origin -- "$(gitb)"'
@@ -60,7 +60,7 @@ alias gpi='perl -pe chomp | gp'
 
 # any available vi-like editor
 alias v=$(
-	if   [[ -n $EDITOR ]]; then printf '%s' "$EDITOR"
+	if   [[ -n $EDITOR ]]; then printf %s "$EDITOR"
 	elif [[ -x $(which nvim 2>/dev/null) ]]; then echo nvim
 	elif [[ -x $(which  vim 2>/dev/null) ]]; then echo  vim
 	elif [[ -x $(which  vi  2>/dev/null) ]]; then echo  vi
@@ -136,4 +136,62 @@ notm() {
 		"$APP" "$@"
 	fi
 	return
+}
+
+# $1 - encrypted filename
+# $2 - a shell command to do something with encrypted file where $f is the
+#      encrypted filename (from $1 argument)
+# [$3] - optional [--silent|-s] flag which silents boilerplate noise
+#        but keeps stderr output inside shell command from $2 argument
+tmpgpg() {
+	if (( $# < 2 || $# > 3 )) || [[ -z $1 || ! -f $1 ]]; then
+		>&2 echo \
+			Incorrect arguments! Provide encrypted file and a shell command!
+		return 1
+	fi
+	local FILE_DIR; FILE_DIR=$(dirname -- "$1") || return
+	local ENCRYPTED_FILE; ENCRYPTED_FILE=$(basename -- "$1"); shift || return
+	local CMD; CMD=$1; shift || return
+	local OPT IS_SILENT=NO; if (( $# > 0 )); then
+		OPT=$1; shift || return
+		IS_SILENT=$(
+			if [[ $OPT == '-s' || $OPT == --silent ]];
+			then echo YES;
+			else ( >&2 printf 'Unexpected option: "%s"\n' "$OPT" && return 1 )
+			fi
+		) || return
+	fi
+	if (( $# != 0 )); then
+		>&2 echo "Some ($#) arguments left unparsed!"
+		return 1
+	fi
+	(
+		cd -- "$FILE_DIR" || return
+		local TMPDIR; TMPDIR=$(mktemp -d --suffix="-$ENCRYPTED_FILE") || return
+		local CLEANUP; CLEANUP=$(
+			if [[ $IS_SILENT == YES ]]; then echo -n 'exec 2>/dev/null ;'; fi
+			echo -n $'find "$TMPDIR/" -type f -exec shred -vufz -n10 {} \;'
+			echo -n ';find "$TMPDIR/" -type d | tac | xargs rmdir'
+		) || return
+		trap -- "$CLEANUP" EXIT || return
+		(
+			if [[ $IS_SILENT == YES ]]; then exec 2>/dev/null; fi
+			gpg -d -o "$TMPDIR/$ENCRYPTED_FILE" -- "$ENCRYPTED_FILE" || return
+		)
+		cd -- "$TMPDIR" || return
+		if [[ $IS_SILENT == NO ]]; then
+			>&2 echo \
+				'~~~~~~~~~~~~~~~~ RUNNING THE SHELL COMMAND ~~~~~~~~~~~~~~~~~'
+		fi
+		local SHELL_CMD; SHELL_CMD=$(
+			echo '. "$WENZELS_BASH_DIR/.bash_aliases" || exit'
+			echo 'set -x || exit'
+			printf %s "$CMD"
+		) || return
+		f="$ENCRYPTED_FILE" "$SHELL" -c "$SHELL_CMD" || return
+		if [[ $IS_SILENT == NO ]]; then
+			>&2 echo \
+				'~~~~~~~~~~~~~~~~~~~~~~~~~~~ DONE ~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+		fi
+	)
 }
