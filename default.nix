@@ -122,13 +122,16 @@ let
     in
       inlineHistorySettings (if overrideEditorEnvVar then withReplaces else withoutEditorOverride);
 
-  patched-aliases = ''
-    ${builtins.readFile "${bashRC}/.bash_aliases"}
+  patched-aliases =
+    let
+      aliases = builtins.readFile "${bashRC}/.bash_aliases";
+    in ''
+      ${builtins.replaceStrings ["BASH_DIR_PLACEHOLDER"] [dirEnvVarName] aliases}
 
-    # miscellaneous aliases
-    ${miscAliases dirEnvVarName}
-    # end: miscellaneous aliases
-  '';
+      # miscellaneous aliases
+      ${miscAliases dirEnvVarName}
+      # end: miscellaneous aliases
+    '';
 
   patched-bashrc-file  = pkgs.writeText "wenzels-patched-bashrc"       patched-bashrc;
   patched-aliases-file = pkgs.writeText "wenzels-patched-bash-aliases" patched-aliases;
