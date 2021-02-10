@@ -1,8 +1,7 @@
-let defaultPkgs = import ../default-nixpkgs-pick.nix; in
-args@
-{ pkgs   ? defaultPkgs
-, ghc    ? (args.pkgs or defaultPkgs).haskellPackages.ghc
-, gcc    ? (args.pkgs or defaultPkgs).gcc
+let sources = import ./sources.nix; in
+{ pkgs   ? import sources.nixpkgs {}
+, ghc    ? pkgs.haskellPackages.ghc
+, gcc    ? pkgs.gcc
 , bashRC ? ../..
 }:
 let

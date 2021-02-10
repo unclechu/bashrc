@@ -1,4 +1,5 @@
-{ pkgs ? import ./default-nixpkgs-pick.nix
+let sources = import ./sources.nix; in
+{ pkgs ? import sources.nixpkgs {}
 }:
 let
   utils-src = pkgs.fetchFromGitHub {

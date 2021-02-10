@@ -1,11 +1,9 @@
 let
-  defaultPkgs = import nix/default-nixpkgs-pick.nix;
-  defaultName = "wenzels-bash";
-  dirSuffix   = name: "${name}-dir";
+  sources   = import nix/sources.nix;
+  dirSuffix = name: "${name}-dir";
 in
-args@
-{ pkgs   ? defaultPkgs
-, name   ? defaultName
+{ pkgs   ? import sources.nixpkgs {}
+, name   ? "wenzels-bash"
 , bashRC ? ./.
 
 # In NixOS you set "EDITOR" environment variable in your "configuration.nix"
@@ -33,9 +31,9 @@ args@
 , dirEnvVarName ?
     let
       kebab2snake = builtins.replaceStrings ["-"] ["_"];
-      toUpper     = (args.pkgs or defaultPkgs).lib.toUpper;
+      toUpper     = pkgs.lib.toUpper;
     in
-      kebab2snake (toUpper (dirSuffix (args.name or defaultName)))
+      kebab2snake (toUpper (dirSuffix name))
 }:
 assert builtins.isBool overrideEditorEnvVar;
 assert builtins.isFunction miscSetups;
