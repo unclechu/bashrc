@@ -184,7 +184,11 @@ tmpgpg() {
 				'~~~~~~~~~~~~~~~~ RUNNING THE SHELL COMMAND ~~~~~~~~~~~~~~~~~'
 		fi
 		local SHELL_CMD; SHELL_CMD=$(
-			echo '. "$WENZELS_BASH_DIR/.bash_aliases" || exit'
+			echo 'if [[ -n $WENZELS_BASH_DIR ]]; then'
+			echo '  . "$WENZELS_BASH_DIR"/.bash_aliases || exit'
+			echo 'elif [[ -f ~/.bash_aliases ]]; then'
+			echo '  . ~/.bash_aliases || exit'
+			echo 'fi'
 			echo 'set -x || exit'
 			printf %s "$CMD"
 		) || return
