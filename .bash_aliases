@@ -138,11 +138,18 @@ notm() {
 	return
 }
 
-# $1 - encrypted filename
-# $2 - a shell command to do something with encrypted file where $f is the
-#      encrypted filename (from $1 argument)
+# $1 - encrypted file
+#
+# $2 - a shell command to do something with encrypted file where
+#      $f is the encrypted filename (from $1 argument),
+#      $d is the directory of original $1 file,
+#      $t is new temporary directory where decrypted file $f is saved,
+#      working directory is changed to $t so you are free to mess there and all
+#      this will be cleaned up when this shell command is done.
+#
 # [$3] - optional [--silent|-s] flag which silents boilerplate noise
 #        but keeps stderr output inside shell command from $2 argument
+#
 tmpgpg() {
 	if (( $# < 2 || $# > 3 )) || [[ -z $1 || ! -f $1 ]]; then
 		>&2 echo \
@@ -193,7 +200,8 @@ tmpgpg() {
 			echo 'set -x || exit'
 			printf %s "$CMD"
 		) || return
-		f="$ENCRYPTED_FILE" d="$FILE_DIR_PWD" "$SHELL" -c "$SHELL_CMD" || return
+		f=$ENCRYPTED_FILE d=$FILE_DIR_PWD t=$TMPDIR \
+			"$SHELL" -c "$SHELL_CMD" || return
 		if [[ $IS_SILENT == NO ]]; then
 			>&2 echo \
 				'~~~~~~~~~~~~~~~~~~~~~~~~~~~ DONE ~~~~~~~~~~~~~~~~~~~~~~~~~~~'
