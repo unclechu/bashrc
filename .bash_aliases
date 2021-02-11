@@ -167,6 +167,7 @@ tmpgpg() {
 	fi
 	(
 		cd -- "$FILE_DIR" || return
+		local FILE_DIR_PWD; FILE_DIR_PWD=$PWD || return
 		local TMPDIR; TMPDIR=$(mktemp -d --suffix="-$ENCRYPTED_FILE") || return
 		local CLEANUP; CLEANUP=$(
 			if [[ $IS_SILENT == YES ]]; then echo -n 'exec 2>/dev/null ;'; fi
@@ -192,7 +193,7 @@ tmpgpg() {
 			echo 'set -x || exit'
 			printf %s "$CMD"
 		) || return
-		f="$ENCRYPTED_FILE" "$SHELL" -c "$SHELL_CMD" || return
+		f="$ENCRYPTED_FILE" d="$FILE_DIR_PWD" "$SHELL" -c "$SHELL_CMD" || return
 		if [[ $IS_SILENT == NO ]]; then
 			>&2 echo \
 				'~~~~~~~~~~~~~~~~~~~~~~~~~~~ DONE ~~~~~~~~~~~~~~~~~~~~~~~~~~~'
