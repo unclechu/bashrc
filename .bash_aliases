@@ -129,12 +129,21 @@ notm() {
 	fi
 	local APP; APP=$1; shift || return
 	local ALIASED; ALIASED=${BASH_ALIASES[$APP]}
+	# This subshell wrap is needed to encapsulate the override of ‘TMUX’
+	(
 	export TMUX=
 	if [[ -n $ALIASED ]]; then
-		bash -c $". ~/.bash_aliases && $ALIASED \"\$@\"" -- "$@"
+		local aliases_file
+		if [[ -n $BASH_DIR_PLACEHOLDER ]]; then
+			aliases_file=$BASH_DIR_PLACEHOLDER/.bash_aliases
+		else
+			aliases_file=~/.bash_aliases
+		fi
+		"$SHELL" -c $". $aliases_file && $ALIASED \"\$@\"" -- "$@"
 	else
 		"$APP" "$@"
 	fi
+	)
 	return
 }
 
