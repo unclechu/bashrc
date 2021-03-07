@@ -1,6 +1,7 @@
 let
-  sources   = import nix/sources.nix;
-  dirSuffix = name: "${name}-dir";
+  sources     = import nix/sources.nix;
+  dirSuffix   = name: "${name}-dir";
+  kebab2snake = builtins.replaceStrings ["-"] ["_"];
 in
 { pkgs   ? import sources.nixpkgs {}
 , utils  ? import sources.nix-utils { inherit pkgs; }
@@ -30,12 +31,7 @@ in
 , miscAliases ? (_: "")
 
 # "WENZELS_BASH_DIR" by default
-, dirEnvVarName ?
-    let
-      kebab2snake = builtins.replaceStrings ["-"] ["_"];
-      toUpper     = pkgs.lib.toUpper;
-    in
-      kebab2snake (toUpper (dirSuffix name))
+, dirEnvVarName ? kebab2snake (pkgs.lib.toUpper (dirSuffix name))
 }:
 assert builtins.isBool overrideEditorEnvVar;
 assert builtins.isFunction miscSetups;
@@ -48,16 +44,12 @@ let
   dir = pkgs.runCommand (dirSuffix name) {} ''
     set -Eeuo pipefail
     mkdir -- "$out"
-    cp -r -- ${esc "${bashRC}"}/misc/ "$out"
-    cp -- ${esc patched-aliases-file} "$out/.bash_aliases"
-    cp -- ${esc history-settings-src-file-path} "$out"
+    cp -r -- ${esc "${bashRC}/misc/"}          "$out"
+    cp -- ${esc patched-aliases-file}          "$out"/${esc bash-aliases-file-name}
+    cp -- ${esc patched-history-settings-file} "$out"/${esc history-settings-file-name}
   '';
 
   vte-sh-file = "${pkgs.vte}/etc/profile.d/vte.sh";
-
-  history-settings-relative-file-path = "history-settings.bash";
-  history-settings-src-file-path = "${bashRC}/${history-settings-relative-file-path}";
-  history-settings-src-file-contents = builtins.readFile history-settings-src-file-path;
 
   patched-bashrc =
     let
@@ -70,7 +62,7 @@ let
           (esc vte-sh-file)
           (esc vte-sh-file)
           ''
-            . "''$${dirEnvVarName}/.bash_aliases"
+            . "''$${dirEnvVarName}"/${esc bash-aliases-file-name}
 
             # miscellaneous setups
             ${miscSetups dirEnvVarName}
@@ -100,7 +92,7 @@ let
       inlineHistorySettings = src:
         let
           initial = { found = false; result = []; };
-          history-settings = lines history-settings-src-file-contents;
+          history-settings = lines patched-history-settings;
 
           reducer = acc: line: acc // (
             let
@@ -121,9 +113,12 @@ let
     in
       inlineHistorySettings (if overrideEditorEnvVar then withReplaces else withoutEditorOverride);
 
+  bash-aliases-file-name     = ".bash_aliases";
+  history-settings-file-name = "history-settings.bash";
+
   patched-aliases =
     let
-      aliases = builtins.readFile "${bashRC}/.bash_aliases";
+      aliases = builtins.readFile "${bashRC}/${bash-aliases-file-name}";
     in ''
       ${builtins.replaceStrings ["BASH_DIR_PLACEHOLDER"] [dirEnvVarName] aliases}
 
@@ -132,8 +127,23 @@ let
       # end: miscellaneous aliases
     '';
 
-  patched-bashrc-file  = pkgs.writeText "wenzels-patched-bashrc"       patched-bashrc;
-  patched-aliases-file = pkgs.writeText "wenzels-patched-bash-aliases" patched-aliases;
+  patched-bashrc-file  = pkgs.writeText "${name}-patched-bashrc"       patched-bashrc;
+  patched-aliases-file = pkgs.writeText "${name}-patched-bash-aliases" patched-aliases;
+
+  patched-history-settings =
+    let
+      history-settings = builtins.readFile "${bashRC}/${history-settings-file-name}";
+
+      lineMapFn = line:
+        let histFileMatch = builtins.match "^((export )?HISTFILE=).*$" line; in
+        if ! isNull histFileMatch
+        then "${builtins.elemAt histFileMatch 0}~/${esc ".${kebab2snake name}_history"}"
+        else line;
+    in
+      unlines (map lineMapFn (lines history-settings));
+
+  patched-history-settings-file =
+    pkgs.writeText "${name}-patched-history-settings" patched-history-settings;
 
   dash = "${pkgs.dash}/bin/dash";
   bash = "${pkgs.bashInteractive_5}/bin/bash";
@@ -152,7 +162,7 @@ wrapExecutable bash {
   args = [ "--rcfile" patched-bashrc-file ];
 } // {
   shellPath = "/bin/${name}";
-  history-settings-file-path = "${dir}/${history-settings-relative-file-path}";
+  history-settings-file-path = "${dir}/${history-settings-file-name}";
 
   inherit
     bashRC dir dirEnvVarName

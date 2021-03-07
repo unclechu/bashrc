@@ -29,3 +29,15 @@ shopt -s histverify
 # save all lines of a multiple-line command in the same history entry
 # (allows easy re-editing of multi-line commands).
 shopt -s cmdhist
+
+# do not export as some configs wouldn’t be delivered to child process
+# (another bash) thus you might lose some history.
+# this is useful for Nix(OS) for which this value is overridden.
+# if you enter ‘nix-shell’ without forwarding your ‘SHELL’ environment variable
+# it would be a standard bash which would take this history file with its own
+# history configuration where default maximum amount of entries is 500,
+# and it would just erase anything extras you have in your ‘.bash_history’.
+# Thus you lose some potentially useful data.
+# If you override ‘HISTFILE’ only by sourcing this file you guarantee that you
+# also receive all the related history settings along with it.
+HISTFILE=~/.bash_history
