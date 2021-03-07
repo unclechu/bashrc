@@ -1,3 +1,5 @@
+#! /usr/bin/env bash
+#
 # history-settings.bash
 #
 # Note for NixOS or just Nix:
@@ -12,7 +14,7 @@
 # See https://github.com/unclechu/nixos-config for an example.
 
 # don't put duplicate lines in the history
-export HISTCONTROL=ignoreboth:erasedups
+HISTCONTROL=ignoreboth:erasedups
 
 # set history length
 HISTFILESIZE=1000000000

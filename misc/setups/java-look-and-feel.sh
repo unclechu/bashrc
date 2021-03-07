@@ -1,3 +1,4 @@
+#! /usr/bin/env bash
 # This file is supposed to be sources (preferably in ~/.profile).
 # It's compatible with sh/dash.
 

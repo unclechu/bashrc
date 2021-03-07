@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#! /usr/bin/env bash
 # .bashrc
 
 # if isn't running interactively, don't do anything
@@ -68,10 +68,10 @@ fi
 export EDITOR=$(
 	# better to predefine it a file to reduce startup time
 	if cat ~/.editor 2>/dev/null; then :
-	elif [[ -x `which nvim 2>/dev/null` ]]; then echo nvim
-	elif [[ -x `which vim  2>/dev/null` ]]; then echo vim
-	elif [[ -x `which vi   2>/dev/null` ]]; then echo vi
-	elif [[ -x `which nano 2>/dev/null` ]]; then echo nano
+	elif [[ -x $(which nvim 2>/dev/null) ]]; then echo nvim
+	elif [[ -x $(which vim  2>/dev/null) ]]; then echo vim
+	elif [[ -x $(which vi   2>/dev/null) ]]; then echo vi
+	elif [[ -x $(which nano 2>/dev/null) ]]; then echo nano
 	fi
 )
 

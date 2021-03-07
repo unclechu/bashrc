@@ -1,3 +1,4 @@
+#! /usr/bin/env bash
 # This module is supposed to be combined with either "skim.bash" or "fzf.bash"
 
 __FUZZY_FINDER_DEFAULT_COMMAND='

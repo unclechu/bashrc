@@ -1,3 +1,5 @@
+#! /usr/bin/env bash
+
 _pip_completion() {
 	COMPREPLY=($(
 		COMP_WORDS="${COMP_WORDS[*]}" COMP_CWORD=$COMP_CWORD \

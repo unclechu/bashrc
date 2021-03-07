@@ -1,3 +1,6 @@
+#! /usr/bin/env bash
+
 f() {
-	if [[ -n $TMUX ]]; then sk-tmux "$@"; else sk "$@"; fi || return
+	set -eu
+	if [[ -n $TMUX ]]; then sk-tmux "$@"; else sk "$@"; fi
 }

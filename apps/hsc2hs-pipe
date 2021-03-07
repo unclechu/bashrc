@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#! /usr/bin/env perl
 #
 # Wrapper for hsc2hs to compile '*.hsc' to '*.hs' but writing result directly
 # to stdout instead of file.
