@@ -4,8 +4,9 @@ let
 in
 { pkgs   ? import sources.nixpkgs {}
 , utils  ? import sources.nix-utils { inherit pkgs; }
+, clean  ? import nix/clean-src.nix { inherit pkgs; }
 , name   ? "wenzels-bash"
-, bashRC ? ./.
+, bashRC ? clean ./.
 
 # In NixOS you set "EDITOR" environment variable in your "configuration.nix"
 # so you might not want an override from this config (in this case leave this argument default).
