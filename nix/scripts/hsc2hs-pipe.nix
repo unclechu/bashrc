@@ -1,15 +1,15 @@
-let sources = import ./sources.nix; in
-{ pkgs   ? import sources.nixpkgs {}
-, ghc    ? pkgs.haskellPackages.ghc
-, gcc    ? pkgs.gcc
-, bashRC ? ../..
+let sources = import ../sources.nix; in
+{ pkgs      ? import sources.nixpkgs {}
+, utils     ? import ../utils.nix { inherit pkgs; }
+, ghc       ? pkgs.haskellPackages.ghc
+, gcc       ? pkgs.gcc
+, scriptSrc ? ../../apps/hsc2hs-pipe
 }:
 let
-  utils = import ../utils.nix { inherit pkgs; };
   inherit (utils) esc writeCheckedExecutable wrapExecutable nameOfModuleFile;
 
   name = nameOfModuleFile (builtins.unsafeGetAttrPos "a" { a = 0; }).file;
-  src = builtins.readFile "${bashRC}/apps/${name}";
+  src = builtins.readFile scriptSrc;
 
   perl = "${pkgs.perl}/bin/perl";
 
@@ -30,4 +30,4 @@ wrapExecutable "${perlScript}/bin/${name}" {
   inherit checkPhase;
   deps = [ ghc gcc ];
   env = { PERL5LIB = pkgs.perlPackages.makePerlPath perlDependencies; };
-} // { inherit bashRC checkPhase perlDependencies perlScript; originSrc = src; }
+} // { inherit checkPhase perlDependencies perlScript scriptSrc; }

@@ -1,13 +1,13 @@
-let sources = import ./sources.nix; in
-{ pkgs   ? import sources.nixpkgs {}
-, bashRC ? ../..
+let sources = import ../sources.nix; in
+{ pkgs      ? import sources.nixpkgs {}
+, utils     ? import ../utils.nix { inherit pkgs; }
+, scriptSrc ? ../../apps/timer.pl6
 }:
 let
-  utils = import ../utils.nix { inherit pkgs; };
   inherit (utils) esc writeCheckedExecutable nameOfModuleFile;
 
   name = nameOfModuleFile (builtins.unsafeGetAttrPos "a" { a = 0; }).file;
-  src = builtins.readFile "${bashRC}/apps/${name}.pl6";
+  src = builtins.readFile scriptSrc;
 
   raku = "${pkgs.rakudo}/bin/raku";
   dzen2 = "${pkgs.dzen2}/bin/dzen2";
@@ -22,4 +22,4 @@ writeCheckedExecutable name checkPhase ''
   use v6.d;
   %*ENV{'PATH'} = q<${pkgs.dzen2}/bin> ~ ':' ~ %*ENV{'PATH'};
   ${builtins.replaceStrings ["use v6;"] [""] src}
-'' // { inherit bashRC checkPhase; originSrc = src; }
+'' // { inherit checkPhase scriptSrc; }
