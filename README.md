@@ -144,7 +144,7 @@ in
 
 ## Author
 
-Viacheslav Lotsmanov (2013–2020)
+Viacheslav Lotsmanov (2013–2021)
 
 [Home Manager]: https://github.com/rycee/home-manager
 [history-settings.bash]: history-settings.bash
