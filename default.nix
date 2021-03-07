@@ -3,6 +3,7 @@ let
   dirSuffix = name: "${name}-dir";
 in
 { pkgs   ? import sources.nixpkgs {}
+, utils  ? import sources.nix-utils { inherit pkgs; }
 , name   ? "wenzels-bash"
 , bashRC ? ./.
 
@@ -38,7 +39,6 @@ in
 assert builtins.isBool overrideEditorEnvVar;
 assert builtins.isFunction miscSetups;
 assert builtins.isFunction miscAliases;
-let utils = import nix/utils.nix { inherit pkgs; }; in
 assert utils.valueCheckers.isNonEmptyString name;
 assert utils.valueCheckers.isNonEmptyString dirEnvVarName;
 let

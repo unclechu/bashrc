@@ -1,6 +1,6 @@
 let sources = import ../sources.nix; in
 { pkgs      ? import sources.nixpkgs {}
-, utils     ? import ../utils.nix { inherit pkgs; }
+, utils     ? import sources.nix-utils { inherit pkgs; }
 , ghc       ? pkgs.haskellPackages.ghc
 , gcc       ? pkgs.gcc
 , scriptSrc ? ../../apps/hsc2hs-pipe

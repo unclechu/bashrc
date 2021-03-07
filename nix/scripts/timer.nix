@@ -1,6 +1,6 @@
 let sources = import ../sources.nix; in
 { pkgs      ? import sources.nixpkgs {}
-, utils     ? import ../utils.nix { inherit pkgs; }
+, utils     ? import sources.nix-utils { inherit pkgs; }
 , scriptSrc ? ../../apps/timer.pl6
 }:
 let
