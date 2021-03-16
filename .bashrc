@@ -66,12 +66,12 @@ elif [[ -n $KONSOLE_VERSION ]]; then
 fi
 
 export EDITOR=$(
-	# better to predefine it a file to reduce startup time
+	# better to predefine it in a file to reduce startup time
 	if cat ~/.editor 2>/dev/null; then :
-	elif [[ -x $(which nvim 2>/dev/null) ]]; then echo nvim
-	elif [[ -x $(which vim  2>/dev/null) ]]; then echo vim
-	elif [[ -x $(which vi   2>/dev/null) ]]; then echo vi
-	elif [[ -x $(which nano 2>/dev/null) ]]; then echo nano
+	elif [[ -x $(type -fp nvim 2>/dev/null) ]]; then echo nvim
+	elif [[ -x $(type -fp vim  2>/dev/null) ]]; then echo vim
+	elif [[ -x $(type -fp vi   2>/dev/null) ]]; then echo vi
+	elif [[ -x $(type -fp nano 2>/dev/null) ]]; then echo nano
 	fi
 )
 
