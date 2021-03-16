@@ -4,6 +4,6 @@ f() {
 	# Encapsulate `set` (otherwise cancellation closes the shell)
 	(
 	set -eu
-	if [[ -n $TMUX ]]; then sk-tmux "$@"; else sk "$@"; fi
+	if [[ -v TMUX ]] && [[ -n $TMUX ]]; then sk-tmux "$@"; else sk "$@"; fi
 	)
 }
