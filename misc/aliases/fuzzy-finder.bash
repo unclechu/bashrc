@@ -4,6 +4,8 @@
 alias fd=$'cd -- "$(find . ! -path . -type d -printf \'%P\\n\' | f)" && echo'
 
 vf() {
+	# Encapsulate `set` (otherwise cancellation closes the shell)
+	(
 	set -eu
 	local FILE; FILE=$(f)
 	local RETVAL=$?
@@ -12,4 +14,5 @@ vf() {
 	else
 		return $(( RETVAL ))
 	fi
+	)
 }
