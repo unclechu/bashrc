@@ -148,9 +148,10 @@ notm() {
 	fi
 	local APP; APP=$1; shift || return
 	local ALIASED; ALIASED=${BASH_ALIASES[$APP]}
-	# This subshell wrap is needed to encapsulate the override of ‘TMUX’
+	# This subshell wrap is needed to encapsulate the removal of ‘TMUX’
 	(
-	export TMUX=
+	unset TMUX TMUX_TMPDIR TMUX_PANE
+	export -n TMUX TMUX_TMPDIR TMUX_PANE
 	if [[ -n $ALIASED ]]; then
 		local aliases_file
 		if [[ -n $BASH_DIR_PLACEHOLDER ]]; then
