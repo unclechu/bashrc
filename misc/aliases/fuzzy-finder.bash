@@ -6,7 +6,17 @@ alias fd=$'cd -- "$(find . ! -path . -type d -printf \'%P\\n\' | f)" && echo'
 vf() {
 	# Encapsulate `set` (otherwise cancellation closes the shell)
 	(
+	if (( $# != 0 )); then
+		>&2 printf '"%s" does not accept any arguments!\n' "${FUNCNAME[0]}"
+		return 1
+	fi
+
 	set -eu
+
+	# Guard dependencies
+	>/dev/null type f
+	>/dev/null type v
+
 	local FILE; FILE=$(f)
 	local RETVAL=$?
 	if (( RETVAL == 0 )) && [[ -n $FILE ]]; then
