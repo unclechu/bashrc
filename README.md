@@ -16,7 +16,7 @@ nix-shell --run wenzels-bash
 let
   pkgs = import <nixpkgs> {};
 
-  wenzels-bash = import (pkgs.fetchFromGitHub {
+  wenzels-bash = pkgs.callPackage (pkgs.fetchFromGitHub {
     owner = "unclechu";
     repo = "bashrc";
     rev = "ffffffffffffffffffffffffffffffffffffffff"; # Git commit hash
@@ -45,11 +45,12 @@ let
     sha256 = "0000000000000000000000000000000000000000000000000000";
   };
 
+  # TODO Use “callPackage” when “neovimrc” is updated
   wenzels-neovim = import "${wenzels-neovim-src}/nix/apps/neovim.nix" {
     bashEnvFile = "${wenzels-bash.dir}/.bash_aliases";
   };
 
-  wenzels-bash = import (pkgs.fetchFromGitHub {
+  wenzels-bash = pkgs.callPackage (pkgs.fetchFromGitHub {
     owner = "unclechu";
     repo = "bashrc";
     rev = "ffffffffffffffffffffffffffffffffffffffff"; # Git commit hash
@@ -62,11 +63,11 @@ in
 ##### Also the scripts
 
 ```sh
-nix-shell -E '(import <nixpkgs> {}).mkShell {buildInputs=[(import nix/scripts/timer.nix {})];}' --run 'timer --help'
+nix-shell -E 'with import <nixpkgs> {}; mkShell {buildInputs=[(callPackage nix/scripts/timer.nix {})];}' --run 'timer --help'
 ```
 
 ```sh
-nix-shell -E '(import <nixpkgs> {}).mkShell {buildInputs=[(import nix/scripts/hsc2hs-pipe.nix {})];}' --run 'hsc2hs-pipe --help'
+nix-shell -E 'with import <nixpkgs> {}; mkShell {buildInputs=[(callPackage nix/scripts/hsc2hs-pipe.nix {})];}' --run 'hsc2hs-pipe --help'
 ```
 
 ### Other GNU/Linux distributions
@@ -94,19 +95,18 @@ nix-shell -E '(import <nixpkgs> {}).mkShell {buildInputs=[(import nix/scripts/hs
 
 ### NixOS
 
-If you happen to run a regular Bash (e.g. by just running `nix-shell`, it will
-run default Bash) you may loose a lot of your `~/.bash_history` because of the
-default Bash history settings.
+In order to prevent loss of the command history this config uses different
+history file (by default `~/.wenzels_bash_history` instead of
+`~/.bash_history`).
 
-In order to avoid this you may either run `nix-shell` with this `--command`
-option (in order to inherit your `$SHELL`):
+If you want vanilla Bash sessions to use that history file don’t just override
+`HISTFILE` or you can loose some of your commands history due to smaller history
+size in Bash defaults. Instead evaluate
+[history-settings.bash] in those Bash sessions. It will both override `HISTFILE`
+and other command history settings such history size.
 
-```sh
-nix-shell -p bash --command 'export SHELL='"'${SHELL//\'}'"' && "$SHELL"'
-```
-
-Or you can use the [Home Manager] in order to include [history-settings.bash] in
-your `.bashrc`. Like this in your `configuration.nix`:
+You can use [Home Manager] in order to include [history-settings.bash] in your
+`~/.bashrc`. Like this in your `configuration.nix`:
 
 ```nix
 let
@@ -122,7 +122,7 @@ let
         sha256 = "0hgn85yl7gixw1adjfa9nx8axmlpw5y1883lzg3zigknx6ff5hsr";
       };
 
-  wenzels-bash = import (pkgs.fetchFromGitHub {
+  wenzels-bash = pkgs.callPackage (pkgs.fetchFromGitHub {
     owner = "unclechu";
     repo = "bashrc";
     rev = "ffffffffffffffffffffffffffffffffffffffff"; # Git commit hash
@@ -142,9 +142,23 @@ in
 }
 ```
 
+#### Entering `nix-shell`
+
+When you enter `nix-shell` is uses its default Bash session. If you want to
+enter some `nix-shell` and to keep your current `$SHELL` you can use `--command`
+in order to inherit your `$SHELL` inside new session:
+
+``` sh
+nix-shell -p hello --command 'export SHELL='"'${SHELL//\'}'"' && "$SHELL"'
+```
+
+In fact this Bash config provides `nsh` alias in [.bash_aliases] that does it
+for you. So just replace `nix-shell` with `nsh` and your `$SHELL` is inherited.
+
 ## Author
 
 Viacheslav Lotsmanov (2013–2021)
 
 [Home Manager]: https://github.com/rycee/home-manager
 [history-settings.bash]: history-settings.bash
+[.bash_aliases]: .bash_aliases

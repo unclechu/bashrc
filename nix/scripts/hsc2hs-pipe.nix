@@ -1,33 +1,43 @@
 let sources = import ../sources.nix; in
-{ pkgs      ? import sources.nixpkgs {}
-, utils     ? pkgs.callPackage sources.nix-utils {}
-, ghc       ? pkgs.haskellPackages.ghc
-, gcc       ? pkgs.gcc
-, scriptSrc ? ../../apps/hsc2hs-pipe
+# This module is intended to be called with ‘nixpkgs.callPackage’
+{ callPackage
+, ghc
+, gcc
+, perl
+, perlPackages
+
+# Overridable dependencies
+, __nix-utils ? callPackage sources.nix-utils {}
+
+# Build options
+, __scriptSrc ? ../../apps/hsc2hs-pipe
 }:
 let
-  inherit (utils) esc writeCheckedExecutable wrapExecutable nameOfModuleFile;
+  inherit (__nix-utils) esc writeCheckedExecutable wrapExecutable nameOfModuleFile shellCheckers;
 
   name = nameOfModuleFile (builtins.unsafeGetAttrPos "a" { a = 0; }).file;
-  src = builtins.readFile scriptSrc;
+  src = builtins.readFile __scriptSrc;
 
-  perl = "${pkgs.perl}/bin/perl";
+  perl-exe = "${perl}/bin/perl";
 
   checkPhase = ''
-    ${utils.shellCheckers.fileIsExecutable perl}
-    ${utils.shellCheckers.fileIsExecutable "${ghc}/bin/hsc2hs"}
-    ${utils.shellCheckers.fileIsExecutable "${gcc}/bin/gcc"}
+    ${shellCheckers.fileIsExecutable perl-exe}
+    ${shellCheckers.fileIsExecutable "${ghc}/bin/hsc2hs"}
+    ${shellCheckers.fileIsExecutable "${gcc}/bin/gcc"}
   '';
 
-  perlScript = writeCheckedExecutable name checkPhase "#! ${perl}\n${src}";
+  perlScript = writeCheckedExecutable name checkPhase "#! ${perl-exe}\n${src}";
 
   perlDependencies = [
-    pkgs.perlPackages.IPCSystemSimple
-    pkgs.perlPackages.FileTemp
+    perlPackages.IPCSystemSimple
+    perlPackages.FileTemp
   ];
 in
 wrapExecutable "${perlScript}/bin/${name}" {
   inherit checkPhase;
   deps = [ ghc gcc ];
-  env = { PERL5LIB = pkgs.perlPackages.makePerlPath perlDependencies; };
-} // { inherit checkPhase perlDependencies perlScript scriptSrc; }
+  env = { PERL5LIB = perlPackages.makePerlPath perlDependencies; };
+} // {
+  inherit checkPhase perlDependencies perlScript;
+  scriptSrc = __scriptSrc;
+}

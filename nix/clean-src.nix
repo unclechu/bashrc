@@ -1,5 +1,4 @@
-let sources = import ./sources.nix; in
-{ pkgs ? import sources.nixpkgs {} }:
+{ lib, nix-gitignore }:
 let
   noUnnecessaryFiles = fileName: fileType: ! (
     builtins.elem (baseNameOf fileName) [
@@ -10,7 +9,7 @@ let
   );
 
   filter = fileName: fileType:
-    noUnnecessaryFiles         fileName fileType &&
-    pkgs.lib.cleanSourceFilter fileName fileType;
+    noUnnecessaryFiles    fileName fileType &&
+    lib.cleanSourceFilter fileName fileType;
 in
-pkgs.nix-gitignore.gitignoreFilterRecursiveSource filter [ ../.gitignore ]
+nix-gitignore.gitignoreFilterRecursiveSource filter [ ../.gitignore ]

@@ -1,25 +1,35 @@
 let sources = import ../sources.nix; in
-{ pkgs      ? import sources.nixpkgs {}
-, utils     ? pkgs.callPackage sources.nix-utils {}
-, scriptSrc ? ../../apps/timer.pl6
+# This module is intended to be called with ‘nixpkgs.callPackage’
+{ callPackage
+, rakudo
+, dzen2
+
+# Overridable dependencies
+, __nix-utils ? callPackage sources.nix-utils {}
+
+# Build options
+, __scriptSrc ? ../../apps/timer.pl6
 }:
 let
-  inherit (utils) esc writeCheckedExecutable nameOfModuleFile;
+  inherit (__nix-utils) esc writeCheckedExecutable nameOfModuleFile shellCheckers;
 
   name = nameOfModuleFile (builtins.unsafeGetAttrPos "a" { a = 0; }).file;
-  src = builtins.readFile scriptSrc;
+  src = builtins.readFile __scriptSrc;
 
-  raku = "${pkgs.rakudo}/bin/raku";
-  dzen2 = "${pkgs.dzen2}/bin/dzen2";
+  raku = "${rakudo}/bin/raku";
+  dzen2-exe = "${dzen2}/bin/dzen2";
 
   checkPhase = ''
-    ${utils.shellCheckers.fileIsExecutable raku}
-    ${utils.shellCheckers.fileIsExecutable dzen2}
+    ${shellCheckers.fileIsExecutable raku}
+    ${shellCheckers.fileIsExecutable dzen2-exe}
   '';
 in
 writeCheckedExecutable name checkPhase ''
   #! ${raku}
   use v6.d;
-  %*ENV{'PATH'} = q<${pkgs.dzen2}/bin> ~ ':' ~ %*ENV{'PATH'};
+  %*ENV{'PATH'} = q<${dzen2}/bin> ~ ':' ~ %*ENV{'PATH'};
   ${builtins.replaceStrings ["use v6;"] [""] src}
-'' // { inherit checkPhase scriptSrc; }
+'' // {
+  inherit checkPhase;
+  scriptSrc = __scriptSrc;
+}
