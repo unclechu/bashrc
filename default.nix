@@ -4,7 +4,7 @@ let
   kebab2snake = builtins.replaceStrings ["-"] ["_"];
 in
 { pkgs   ? import sources.nixpkgs {}
-, utils  ? import sources.nix-utils { inherit pkgs; }
+, utils  ? pkgs.callPackage sources.nix-utils {}
 , clean  ? import nix/clean-src.nix { inherit pkgs; }
 , name   ? "wenzels-bash"
 , bashRC ? clean ./.
