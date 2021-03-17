@@ -11,6 +11,8 @@ assert kebab2snake "foo-bar-baz" == kebab2snake (kebab2snake "foo-bar-baz");
 , lib
 , vte
 , bashInteractive_5
+, findutils
+, gnused
 
 # Overridable dependencies
 , __nix-utils ? callPackage sources.nix-utils {}
@@ -50,17 +52,34 @@ assert builtins.isFunction miscSetups;
 assert builtins.isFunction miscAliases;
 let inherit (__nix-utils) esc lines unlines wrapExecutable valueCheckers shellCheckers; in
 assert valueCheckers.isNonEmptyString __name;
-assert valueCheckers.isNonEmptyString dirEnvVarName;
+assert ! isNull (builtins.match "^[_A-Z][_A-Z0-9]*$" dirEnvVarName);
 let
+  vte-sh-file = "${vte}/etc/profile.d/vte.sh";
+  bash-exe = "${bashInteractive_5}/bin/bash";
+  find-exe = "${findutils}/bin/find";
+  sed-exe  = "${gnused}/bin/sed";
+
   dir = runCommand (dirSuffix __name) {} ''
     set -Eeuo pipefail || exit
-    mkdir -- "$out"
-    cp -r -- ${esc "${__bashRC}/misc/"}        "$out"
-    cp -- ${esc patched-aliases-file}          "$out"/${esc bash-aliases-file-name}
-    cp -- ${esc patched-history-settings-file} "$out"/${esc history-settings-file-name}
+
+    mkdir tmp
+    >/dev/null pushd tmp
+
+    cp -r -- ${esc "${__bashRC}/misc/"}        .
+    cp -- ${esc patched-aliases-file}          ${esc bash-aliases-file-name}
+    cp -- ${esc patched-history-settings-file} ${esc history-settings-file-name}
+
+    chmod u+w -R .
+
+    ${esc find-exe} -type f | while read -r file; do
+      ${esc sed-exe} -i -e ${esc "s/BASH_DIR_PLACEHOLDER/${dirEnvVarName}/g"} -- "$file"
+    done
+
+    >/dev/null popd
+    mv tmp -- "$out"
   '';
 
-  vte-sh-file = "${vte}/etc/profile.d/vte.sh";
+  substitutePlaceholders = builtins.replaceStrings ["BASH_DIR_PLACEHOLDER"] [dirEnvVarName];
 
   patched-bashrc =
     let
@@ -79,7 +98,7 @@ let
             ${miscSetups dirEnvVarName}
             # end: miscellaneous setups
           ''
-        ] (builtins.readFile "${__bashRC}/.bashrc");
+        ] (substitutePlaceholders (builtins.readFile "${__bashRC}/.bashrc"));
 
       withoutEditorOverride =
         let
@@ -124,26 +143,18 @@ let
     in
       inlineHistorySettings (if overrideEditorEnvVar then withReplaces else withoutEditorOverride);
 
-  bash-aliases-file-name     = ".bash_aliases";
-  history-settings-file-name = "history-settings.bash";
+  patched-aliases = ''
+    ${substitutePlaceholders (builtins.readFile "${__bashRC}/${bash-aliases-file-name}")}
 
-  patched-aliases =
-    let
-      aliases = builtins.readFile "${__bashRC}/${bash-aliases-file-name}";
-    in ''
-      ${builtins.replaceStrings ["BASH_DIR_PLACEHOLDER"] [dirEnvVarName] aliases}
-
-      # miscellaneous aliases
-      ${miscAliases dirEnvVarName}
-      # end: miscellaneous aliases
-    '';
-
-  patched-bashrc-file  = writeText "${__name}-patched-bashrc"       patched-bashrc;
-  patched-aliases-file = writeText "${__name}-patched-bash-aliases" patched-aliases;
+    # miscellaneous aliases
+    ${miscAliases dirEnvVarName}
+    # end: miscellaneous aliases
+  '';
 
   patched-history-settings =
     let
-      history-settings = builtins.readFile "${__bashRC}/${history-settings-file-name}";
+      history-settings =
+        substitutePlaceholders (builtins.readFile "${__bashRC}/${history-settings-file-name}");
 
       lineMapFn = line:
         let histFileMatch = builtins.match "^((export )?HISTFILE=).*$" line; in
@@ -153,18 +164,26 @@ let
     in
       unlines (map lineMapFn (lines history-settings));
 
+  bash-aliases-file-name     = ".bash_aliases";
+  history-settings-file-name = "history-settings.bash";
+
+  patched-bashrc-file =
+    writeText "${__name}-patched-bashrc" patched-bashrc;
+  patched-aliases-file =
+    writeText "${__name}-patched-bash-aliases" patched-aliases;
   patched-history-settings-file =
     writeText "${__name}-patched-history-settings" patched-history-settings;
 
-  bash-exe = "${bashInteractive_5}/bin/bash";
-
   checkPhase = ''
-    ${shellCheckers.fileIsExecutable bash-exe}
     ${shellCheckers.fileIsReadable vte-sh-file}
+    ${shellCheckers.fileIsExecutable bash-exe}
+    ${shellCheckers.fileIsExecutable find-exe}
+    ${shellCheckers.fileIsExecutable sed-exe}
   '';
 in
 assert valueCheckers.isNonEmptyString patched-bashrc;
 assert valueCheckers.isNonEmptyString patched-aliases;
+assert valueCheckers.isNonEmptyString patched-history-settings;
 wrapExecutable bash-exe {
   inherit checkPhase;
   name = __name;
