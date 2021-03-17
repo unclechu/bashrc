@@ -3,7 +3,7 @@
 f() {
 	# Encapsulate `set` (otherwise cancellation closes the shell)
 	(
-	set -eu
+	set -eu || exit
 	if [[ -v TMUX ]] && [[ -n $TMUX ]]; then fzf-tmux "$@"; else fzf "$@"; fi
 	)
 }

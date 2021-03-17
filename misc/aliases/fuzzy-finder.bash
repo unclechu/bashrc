@@ -11,7 +11,7 @@ vf() {
 		return 1
 	fi
 
-	set -eu
+	set -eu || exit
 
 	# Guard dependencies
 	>/dev/null type f

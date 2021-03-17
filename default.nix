@@ -53,7 +53,7 @@ assert valueCheckers.isNonEmptyString __name;
 assert valueCheckers.isNonEmptyString dirEnvVarName;
 let
   dir = runCommand (dirSuffix __name) {} ''
-    set -Eeuo pipefail
+    set -Eeuo pipefail || exit
     mkdir -- "$out"
     cp -r -- ${esc "${__bashRC}/misc/"}        "$out"
     cp -- ${esc patched-aliases-file}          "$out"/${esc bash-aliases-file-name}
