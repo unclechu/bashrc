@@ -4,6 +4,7 @@ args@
 
 # Forwarded arguments.
 # See ‘default.nix’ for details.
+, __nix-utils          ? null
 , __name               ? null
 , __bashRC             ? null
 , overrideEditorEnvVar ? null
@@ -16,8 +17,15 @@ args@
 , with-timer-script       ? false
 }:
 let
-  forwardedNames =
-    ["__name" "__bashRC" "overrideEditorEnvVar" "miscSetups" "miscAliases" "dirEnvVarName"];
+  forwardedNames = [
+    "__nix-utils"
+    "__name"
+    "__bashRC"
+    "overrideEditorEnvVar"
+    "miscSetups"
+    "miscAliases"
+    "dirEnvVarName"
+  ];
 
   filterForwarded = pkgs.lib.filterAttrs (n: v: builtins.elem n forwardedNames);
   wenzels-bash = pkgs.callPackage ./. (filterForwarded args);
