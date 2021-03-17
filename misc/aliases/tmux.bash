@@ -9,28 +9,27 @@ alias tmsh=tmuxsh
 alias tma='tm a 2>/dev/null || tm new -s main'
 
 # helper to remove TMUX variable from running application (support aliases)
-notm() {
+notm() (
+	set -Eeuo pipefail || exit
+
 	if (( $# == 0 )); then
-		>&2 echo 'No app specified to run!'
+		>&2 echo No app specified to run!
 		return 1
 	fi
-	local APP; APP=$1; shift || return
-	local ALIASED; ALIASED=${BASH_ALIASES[$APP]}
-	# This subshell wrap is needed to encapsulate the removal of ‘TMUX’
-	(
+
+	local APP=$1; shift
 	unset TMUX TMUX_TMPDIR TMUX_PANE
 	export -n TMUX TMUX_TMPDIR TMUX_PANE
-	if [[ -n $ALIASED ]]; then
-		local aliases_file
-		if [[ -n $BASH_DIR_PLACEHOLDER ]]; then
-			aliases_file=$BASH_DIR_PLACEHOLDER/.bash_aliases
-		else
-			aliases_file=~/.bash_aliases
+
+	if [[ -v "BASH_ALIASES[$APP]" ]]; then
+		local aliases_file=
+		if [[ -v BASH_DIR_PLACEHOLDER ]] && [[ -n $BASH_DIR_PLACEHOLDER ]]; then
+			aliases_file='. $BASH_DIR_PLACEHOLDER/.bash_aliases && '
+		elif [[ -f ~/.bash_aliases ]]; then
+			aliases_file='. ~/.bash_aliases && '
 		fi
-		"$SHELL" -c $". $aliases_file && $ALIASED \"\$@\"" -- "$@"
+		"$SHELL" -c $"${aliases_file}${BASH_ALIASES[$APP]} \"\$@\"" -- "$@"
 	else
 		"$APP" "$@"
 	fi
-	)
-	return
-}
+)

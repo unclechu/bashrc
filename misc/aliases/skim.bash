@@ -1,9 +1,7 @@
 #! /usr/bin/env bash
 
-f() {
-	# Encapsulate `set` (otherwise cancellation closes the shell)
-	(
-	set -eu || exit
+# Subshell encapsulates `set` (otherwise cancellation closes the shell)
+f() (
+	set -Eeuo pipefail || exit
 	if [[ -v TMUX ]] && [[ -n $TMUX ]]; then sk-tmux "$@"; else sk "$@"; fi
-	)
-}
+)
