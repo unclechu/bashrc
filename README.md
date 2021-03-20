@@ -6,16 +6,15 @@
 
 #### Try it in a `nix-shell`
 
-```sh
+``` sh
 nix-shell --run wenzels-bash
 ```
 
 #### As a NixOS system dependency
 
-```nix
+``` nix
+{ pkgs, ... }:
 let
-  pkgs = import <nixpkgs> {};
-
   wenzels-bash = pkgs.callPackage (pkgs.fetchFromGitHub {
     owner = "unclechu";
     repo = "bashrc";
@@ -34,10 +33,9 @@ in
 
 See https://github.com/unclechu/neovimrc
 
-```nix
+``` nix
+{ pkgs, ... }:
 let
-  pkgs = import <nixpkgs> {};
-
   wenzels-neovim-src = pkgs.fetchFromGitHub {
     owner = "unclechu";
     repo = "neovimrc";
@@ -45,10 +43,10 @@ let
     sha256 = "0000000000000000000000000000000000000000000000000000";
   };
 
-  # TODO Use “callPackage” when “neovimrc” is updated
-  wenzels-neovim = import "${wenzels-neovim-src}/nix/apps/neovim.nix" {
-    bashEnvFile = "${wenzels-bash.dir}/.bash_aliases";
-  };
+  wenzels-neovim =
+    pkgs.callPackage "${wenzels-neovim-src}/nix/apps/neovim.nix" {
+      bashEnvFile = "${wenzels-bash.dir}/.bash_aliases";
+    };
 
   wenzels-bash = pkgs.callPackage (pkgs.fetchFromGitHub {
     owner = "unclechu";
@@ -74,20 +72,20 @@ nix-shell -E 'with import <nixpkgs> {}; mkShell {buildInputs=[(callPackage nix/s
 
 1. Clone this repo:
 
-   ```sh
+   ``` sh
    git clone --recursive https://github.com/unclechu/bashrc.git ~/.config/bashrc
    ```
 
 2. Create `~/.bashrc` with this content:
 
-   ```sh
+   ``` sh
    if [[ -z $PS1 ]]; then return; fi
    "$HOME/.config/bashrc/.bashrc"
    ```
 
 3. Create `~/.bash_aliases` with this content:
 
-   ```sh
+   ``` sh
    "$HOME/.config/bashrc/.bash_aliases"
    ```
 
@@ -109,17 +107,16 @@ You can use [Home Manager] in order to include [history-settings.bash] in your
 `~/.bashrc`. Like this in your `configuration.nix`:
 
 ```nix
+{ pkgs, ... }:
 let
-  pkgs = import <nixpkgs> {};
-
   home-manager =
     let
-      # ref "release-20.03", 5 July 2020
-      commit = "318bc0754ed6370cfcae13183a7f13f7aa4bc73f";
+      # Branch "release-20.09"
+      commit = "209566c752c4428c7692c134731971193f06b37c";
     in
       fetchTarball {
         url = "https://github.com/rycee/home-manager/archive/${commit}.tar.gz";
-        sha256 = "0hgn85yl7gixw1adjfa9nx8axmlpw5y1883lzg3zigknx6ff5hsr";
+        sha256 = "1canlfkm09ssbgm3hq0kb9d86bdh84jhidxv75g98zq5wgadk7jm";
       };
 
   wenzels-bash = pkgs.callPackage (pkgs.fetchFromGitHub {
