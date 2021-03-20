@@ -60,8 +60,8 @@ alias nsh=$(
 
 # shortcut for gpaste cli
 alias gp=$(
-	if   [[ -x $(type -fp gpaste-client 2>/dev/null) ]]; then echo 'gpaste-client'
-	elif [[ -x $(type -fp gpaste        2>/dev/null) ]]; then echo 'gpaste'
+	if   [[ -x $(type -P gpaste-client 2>/dev/null) ]]; then echo 'gpaste-client'
+	elif [[ -x $(type -P gpaste        2>/dev/null) ]]; then echo 'gpaste'
 	else echo 'echo gpaste not found >&2 ; false'
 	fi
 )
@@ -72,9 +72,9 @@ alias gpi='perl -pe chomp | gp'
 # any available vi-like editor
 alias v=$(
 	if   [[ -n $EDITOR ]]; then printf %s "$EDITOR"
-	elif [[ -x $(type -fp nvim 2>/dev/null) ]]; then echo nvim
-	elif [[ -x $(type -fp  vim 2>/dev/null) ]]; then echo  vim
-	elif [[ -x $(type -fp  vi  2>/dev/null) ]]; then echo  vi
+	elif [[ -x $(type -P nvim 2>/dev/null) ]]; then echo nvim
+	elif [[ -x $(type -P  vim 2>/dev/null) ]]; then echo  vim
+	elif [[ -x $(type -P  vi  2>/dev/null) ]]; then echo  vi
 	else echo 'echo not found any implementation of vi >&2 ; false'
 	fi
 )

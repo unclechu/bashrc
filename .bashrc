@@ -68,10 +68,10 @@ fi
 export EDITOR=$(
 	# better to predefine it in a file to reduce startup time
 	if cat ~/.editor 2>/dev/null; then :
-	elif [[ -x $(type -fp nvim 2>/dev/null) ]]; then echo nvim
-	elif [[ -x $(type -fp vim  2>/dev/null) ]]; then echo vim
-	elif [[ -x $(type -fp vi   2>/dev/null) ]]; then echo vi
-	elif [[ -x $(type -fp nano 2>/dev/null) ]]; then echo nano
+	elif [[ -x $(type -P nvim 2>/dev/null) ]]; then echo nvim
+	elif [[ -x $(type -P vim  2>/dev/null) ]]; then echo vim
+	elif [[ -x $(type -P vi   2>/dev/null) ]]; then echo vi
+	elif [[ -x $(type -P nano 2>/dev/null) ]]; then echo nano
 	fi
 )
 
