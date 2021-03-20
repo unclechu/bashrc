@@ -1,3 +1,4 @@
+# This module is intended to be called with ‘nixpkgs.callPackage’
 { lib, nix-gitignore }:
 let
   noUnnecessaryFiles = fileName: fileType: ! (

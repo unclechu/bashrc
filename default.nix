@@ -5,6 +5,7 @@ let
 in
 assert kebab2snake "foo-bar-baz" == "foo_bar_baz";
 assert kebab2snake "foo-bar-baz" == kebab2snake (kebab2snake "foo-bar-baz");
+# This module is intended to be called with ‘nixpkgs.callPackage’
 { callPackage
 , runCommand
 , writeText
