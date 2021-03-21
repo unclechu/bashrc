@@ -1,4 +1,7 @@
 #! /usr/bin/env perl
+# Author: Viacheslav Lotsmanov
+# License: MIT https://raw.githubusercontent.com/unclechu/bashrc/master/LICENSE
+
 #
 # Wrapper for hsc2hs to compile '*.hsc' to '*.hs' but writing result directly
 # to stdout instead of file.

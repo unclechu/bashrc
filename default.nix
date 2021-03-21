@@ -1,3 +1,5 @@
+# Author: Viacheslav Lotsmanov
+# License: MIT https://raw.githubusercontent.com/unclechu/bashrc/master/LICENSE
 let
   sources     = import nix/sources.nix;
   dirSuffix   = name: "${name}-dir";

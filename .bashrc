@@ -1,4 +1,7 @@
 #! /usr/bin/env bash
+# Author: Viacheslav Lotsmanov
+# License: MIT https://raw.githubusercontent.com/unclechu/bashrc/master/LICENSE
+
 # .bashrc
 
 # if isn't running interactively, don't do anything

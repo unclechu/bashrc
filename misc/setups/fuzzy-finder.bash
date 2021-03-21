@@ -1,4 +1,7 @@
 #! /usr/bin/env bash
+# Author: Viacheslav Lotsmanov
+# License: MIT https://raw.githubusercontent.com/unclechu/bashrc/master/LICENSE
+
 # This module is supposed to be combined with either "skim.bash" or "fzf.bash"
 
 __FUZZY_FINDER_DEFAULT_COMMAND='

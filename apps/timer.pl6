@@ -1,4 +1,6 @@
 #! /usr/bin/env perl6
+# Author: Viacheslav Lotsmanov
+# License: MIT https://raw.githubusercontent.com/unclechu/bashrc/master/LICENSE
 use v6;
 close $*IN;
 my Int \LineLimit := 60;

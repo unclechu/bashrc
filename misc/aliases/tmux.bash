@@ -1,4 +1,6 @@
 #! /usr/bin/env bash
+# Author: Viacheslav Lotsmanov
+# License: MIT https://raw.githubusercontent.com/unclechu/bashrc/master/LICENSE
 
 # to generate tmux session socket file path based on username
 alias tmuxs=$'printf \'/tmp/%s-tmux-%s\' "$(whoami)" '

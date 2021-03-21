@@ -1,4 +1,7 @@
 #! /usr/bin/env bash
+# Author: Viacheslav Lotsmanov
+# License: MIT https://raw.githubusercontent.com/unclechu/bashrc/master/LICENSE
+
 # This file is supposed to be sources (preferably in ~/.profile).
 # It's compatible with sh/dash.
 

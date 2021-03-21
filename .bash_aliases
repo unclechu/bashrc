@@ -1,4 +1,7 @@
 #! /usr/bin/env bash
+# Author: Viacheslav Lotsmanov
+# License: MIT https://raw.githubusercontent.com/unclechu/bashrc/master/LICENSE
+
 # .bash_aliases
 
 shopt -s expand_aliases

@@ -1,5 +1,7 @@
 #! /usr/bin/env bash
-#
+# Author: Viacheslav Lotsmanov
+# License: MIT https://raw.githubusercontent.com/unclechu/bashrc/master/LICENSE
+
 # history-settings.bash
 #
 # Note for NixOS or just Nix:

@@ -156,6 +156,13 @@ for you. So just replace `nix-shell` with `nsh` and your `$SHELL` is inherited.
 
 Viacheslav Lotsmanov (2013–2021)
 
+## License
+
+[MIT] — For the code of this repository.
+Some third-party dependencies may have different licenses.
+
 [Home Manager]: https://github.com/rycee/home-manager
+
+[MIT]: LICENSE
 [history-settings.bash]: history-settings.bash
 [.bash_aliases]: .bash_aliases

@@ -1,3 +1,6 @@
+# Author: Viacheslav Lotsmanov
+# License: MIT https://raw.githubusercontent.com/unclechu/bashrc/master/LICENSE
+
 # This module is intended to be called with ‘nixpkgs.callPackage’
 { lib, nix-gitignore }:
 let
