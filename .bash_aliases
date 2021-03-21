@@ -42,6 +42,11 @@ alias gitcam='git commit --amend -m'
 alias gitcsm='git commit -S -m'
 alias gitcsam='git commit -S --amend -m'
 alias gitcasm='git commit --amend -S -m'
+# just add a signature to a commit (last commit by default)
+alias gitsign='git commit -S --amend --no-edit'
+# rebase + sign. e.g. `gitrsign origin/master`.
+# it will do a rebase but also sign all the rebased commits.
+alias gitrsign='git rebase -i --exec "git commit -S --amend --no-edit"'
 alias gita='git add'
 alias gitd='git diff'
 alias gitds='git diff --staged'
