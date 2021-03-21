@@ -6,6 +6,16 @@
 
 alias fd=$'cd -- "$(find . ! -path . -type d -printf \'%P\\n\' | f)" && echo'
 
+# Can’t use `notm fd` because `notm` would encapsulate the `cd`.
+# This is useful when tmux ‘synchronize-panes’ feature is on and you need to
+# change directory using `fd`. By default it would create new tmux pane with
+# fuzzy search app started there for each pane on current window. This is here
+# the synchronization breaks. `fd-notm` would use regular fuzzy search app
+# (instead of tmux-specific version) that would stay in the same pane.
+alias fd-notm=$'cd -- "$(
+	find . ! -path . -type d -printf \'%P\\n\' | NO_TMUX_F=1 f
+)" && echo'
+
 # Subshell encapsulates `set` (otherwise cancellation closes the shell)
 vf() (
 	set -Eeuo pipefail || exit
