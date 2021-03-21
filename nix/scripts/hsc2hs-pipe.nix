@@ -9,13 +9,15 @@ let sources = import ../sources.nix; in
 , perlPackages
 
 # Overridable dependencies
-, __nix-utils ? callPackage sources.nix-utils {}
+, __nix-utils ? callPackage sources.nix-utils { inherit perlPackages; }
 
 # Build options
 , __scriptSrc ? ../../apps/hsc2hs-pipe
 }:
 let
-  inherit (__nix-utils) esc writeCheckedExecutable wrapExecutable nameOfModuleFile shellCheckers;
+  inherit (__nix-utils)
+    esc nameOfModuleFile shellCheckers valueCheckers
+    writeCheckedExecutable wrapExecutable wrapExecutableWithPerlDeps;
 
   name = nameOfModuleFile (builtins.unsafeGetAttrPos "a" { a = 0; }).file;
   src = builtins.readFile __scriptSrc;
@@ -29,17 +31,18 @@ let
   '';
 
   perlScript = writeCheckedExecutable name checkPhase "#! ${perl-exe}\n${src}";
+  app = wrapExecutable "${perlScript}/bin/${name}" { deps = [ ghc gcc ]; };
 
-  perlDependencies = [
-    perlPackages.IPCSystemSimple
-    perlPackages.FileTemp
+  deps = p: [
+    p.IPCSystemSimple
+    # p.FileTemp # ‘null’ dummy plug
   ];
+
+  pkg = wrapExecutableWithPerlDeps "${app}/bin/${name}" { inherit deps; };
 in
-wrapExecutable "${perlScript}/bin/${name}" {
-  inherit checkPhase;
-  deps = [ ghc gcc ];
-  env = { PERL5LIB = perlPackages.makePerlPath perlDependencies; };
-} // {
-  inherit checkPhase perlDependencies perlScript;
+assert valueCheckers.isNonEmptyString src;
+pkg // {
+  inherit checkPhase perlScript;
+  perlDependencies = deps perlPackages;
   scriptSrc = __scriptSrc;
 }
