@@ -4,7 +4,12 @@
 
 # This module works both for "skim" and "fzf" (it relies only on "f" function)
 
-alias fd=$'cd -- "$(find . ! -path . -type d -printf \'%P\\n\' | f)" && echo'
+alias fd=$'cd -- "$(
+	find . \
+		\( -type d -name .cache -prune \) \
+		-o \( -type d ! -path . -printf \'%P\\n\' \) \
+	| f
+)" && echo'
 
 # Can’t use `notm fd` because `notm` would encapsulate the `cd`.
 # This is useful when tmux ‘synchronize-panes’ feature is on and you need to
@@ -13,7 +18,10 @@ alias fd=$'cd -- "$(find . ! -path . -type d -printf \'%P\\n\' | f)" && echo'
 # the synchronization breaks. `fd-notm` would use regular fuzzy search app
 # (instead of tmux-specific version) that would stay in the same pane.
 alias fd-notm=$'cd -- "$(
-	find . ! -path . -type d -printf \'%P\\n\' | NO_TMUX_F=1 f
+	find . \
+		\( -type d -name .cache -prune \) \
+		-o \( -type d ! -path . -printf \'%P\\n\' \) \
+	| NO_TMUX_F=1 f
 )" && echo'
 
 # Subshell encapsulates `set` (otherwise cancellation closes the shell)
