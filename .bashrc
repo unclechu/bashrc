@@ -37,8 +37,11 @@ __COLOR=(
 # use it to remove color symbols like this: ${x//$__COLOR_PATTERN/}
 __COLOR_PATTERN='\\\[[[:cntrl:]]\[[[:digit:]][[:digit:]][[:digit:]]m\\\]'
 
-if [[ -z $__TERM_NAME_PREFIX && $TERM == xterm-termite ]]; then
-	export __TERM_NAME_PREFIX='termite | '
+if [[ -z $__TERM_NAME_PREFIX ]]; then
+	case $TERM in
+		xterm-termite) export __TERM_NAME_PREFIX='termite | ' ;;
+		alacritty) export __TERM_NAME_PREFIX='Alacritty | ' ;;
+	esac
 fi
 
 if [[ -n $VTE_VERSION ]]; then
@@ -346,7 +349,7 @@ prompt_command() {
 }
 
 # set prompt command (title update and color prompt)
-PROMPT_COMMAND=prompt_command
+PROMPT_COMMAND=prompt_command';export __PREV_COMMAND=""'
 
 # set new b/w prompt (will be overwritten in 'prompt_command' later)
 PS1=$(
@@ -372,5 +375,31 @@ _burp_completion() {
 complete -o default -F _burp_completion burp
 
 if [[ -f ~/.bash_aliases ]]; then . ~/.bash_aliases; fi
+
+if [[ -z $VIMRUNTIME && $TERM == alacritty ]]; then
+	__set_window_title() {
+		if [[ $1 == 'export __PREV_COMMAND=""' ]]; then return; fi
+		local pre=$__TERM_NAME_PREFIX
+
+		local post='~'
+		if [[ $PWD != "$HOME" ]]; then post=${PWD/#$HOME\//\~\/}; fi
+		post=${post//[[:cntrl:]]}
+		post=${USER}@${HOSTNAME%%.*}:${post}
+
+		if [[ $1 != prompt_command ]]; then
+			if [[ -n $__PREV_COMMAND ]]; then
+				__PREV_COMMAND=${__PREV_COMMAND}' | '
+			fi
+			pre=${pre}${__PREV_COMMAND}${1}
+			post=' | '${post}
+			__PREV_COMMAND=${__PREV_COMMAND}${1}
+			export __PREV_COMMAND
+		fi
+
+		printf '%b%s%s%b' '\033]0;' "${pre}" "${post}" '\007'
+	}
+
+	trap '__set_window_title "$BASH_COMMAND"' DEBUG
+fi
 
 # vim: set noet cc=81 tw=80 :
