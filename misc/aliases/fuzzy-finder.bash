@@ -32,16 +32,25 @@ vf() (
 	>/dev/null type f
 	>/dev/null type v
 
-	if (( $# != 0 )); then
-		>&2 printf '"%s" does not accept any arguments!\n' "${FUNCNAME[0]}"
+	local file exit_code
+
+	if (( $# == 1 )) && [[ $1 == notm ]]; then
+		file=$(NO_TMUX_F=1 f)
+		exit_code=$?
+	elif (( $# == 0 )); then
+		file=$(f)
+		exit_code=$?
+	else
+		>&2 printf 'Incorrect arguments for “%s”!\n' "${FUNCNAME[0]}"
+		>&2 printf 'Usage: %s [notm]\n' "${FUNCNAME[0]}"
 		return 1
 	fi
 
-	local FILE; FILE=$(f)
-	local RETVAL=$?
-	if (( RETVAL == 0 )) && [[ -n $FILE ]]; then
-		v -- "$FILE"
+	if (( exit_code == 0 )) && [[ -n $file ]]; then
+		v -- "$file"
 	else
-		return $(( RETVAL ))
+		return $(( exit_code ))
 	fi
 )
+
+alias vf-notm='vf notm'
