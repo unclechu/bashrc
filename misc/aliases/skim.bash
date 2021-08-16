@@ -5,10 +5,21 @@
 # Subshell encapsulates `set` (otherwise cancellation closes the shell)
 f() (
 	set -Eeuo pipefail || exit
-	if [[ ! -v NO_TMUX_F || -z $NO_TMUX_F ]] \
-	&& [[ -v TMUX && -n $TMUX ]]; then
-		sk-tmux "$@"
+
+	local in_tmux=false colors_arg
+	colors_arg=()
+	if [[ -v TMUX && -n $TMUX ]]; then
+		in_tmux=true
+		if &>/dev/null type tmuxsh; then
+			local out
+			out=$(tmuxsh co s)
+			colors_arg=("--color=$out")
+		fi
+	fi
+
+	if [[ ! -v NO_TMUX_F || -z $NO_TMUX_F ]] && "$in_tmux"; then
+		sk-tmux "${colors_arg[@]}" "$@"
 	else
-		sk "$@"
+		sk "${colors_arg[@]}" "$@"
 	fi
 )
