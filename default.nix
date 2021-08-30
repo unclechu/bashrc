@@ -19,7 +19,6 @@ assert kebab2snake "foo-bar-baz" == kebab2snake (kebab2snake "foo-bar-baz");
 
 # Overridable dependencies
 , __nix-utils ? callPackage sources.nix-utils {}
-, __utils ? callPackage nix/utils.nix {}
 
 # Build options
 , __name ? "wenzels-bash"
@@ -54,8 +53,7 @@ assert kebab2snake "foo-bar-baz" == kebab2snake (kebab2snake "foo-bar-baz");
 assert builtins.isBool overrideEditorEnvVar;
 assert builtins.isFunction miscSetups;
 assert builtins.isFunction miscAliases;
-let inherit (__nix-utils) esc wrapExecutable valueCheckers shellCheckers; in
-let inherit (__utils) mapStringAsLines; in
+let inherit (__nix-utils) esc wrapExecutable valueCheckers shellCheckers mapStringAsLines; in
 assert valueCheckers.isNonEmptyString __name;
 assert ! isNull (builtins.match "^[_A-Z][_A-Z0-9]*$" dirEnvVarName);
 let
