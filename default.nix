@@ -19,6 +19,7 @@ assert kebab2snake "foo-bar-baz" == kebab2snake (kebab2snake "foo-bar-baz");
 
 # Overridable dependencies
 , __nix-utils ? callPackage sources.nix-utils {}
+, __utils ? callPackage nix/utils.nix {}
 
 # Build options
 , __name ? "wenzels-bash"
@@ -53,7 +54,8 @@ assert kebab2snake "foo-bar-baz" == kebab2snake (kebab2snake "foo-bar-baz");
 assert builtins.isBool overrideEditorEnvVar;
 assert builtins.isFunction miscSetups;
 assert builtins.isFunction miscAliases;
-let inherit (__nix-utils) esc lines unlines wrapExecutable valueCheckers shellCheckers; in
+let inherit (__nix-utils) esc wrapExecutable valueCheckers shellCheckers; in
+let inherit (__utils) mapStringAsLines; in
 assert valueCheckers.isNonEmptyString __name;
 assert ! isNull (builtins.match "^[_A-Z][_A-Z0-9]*$" dirEnvVarName);
 let
@@ -115,21 +117,22 @@ let
             { result = acc.result ++ [line]; }
           );
 
-          result = builtins.foldl' reducer initial (lines withReplaces);
-          resultStr = unlines result.result;
+          resultStr = mapStringAsLines withReplaces (lines:
+            let result = builtins.foldl' reducer initial lines; in
+            assert result.found == false; # the block closed before end of the file
+            result.result
+          );
         in
-          assert result.found == false; # the block closed before end of the file
           assert resultStr != withReplaces; # something was actually removed
           resultStr;
 
       inlineHistorySettings = src:
         let
           initial = { found = false; result = []; };
-          history-settings = lines patched-history-settings;
 
           reducer = acc: line: acc // (
             let
-              put = { found = false; result = acc.result ++ history-settings; };
+              put = { found = false; result = acc.result ++ [ patched-history-settings ]; };
             in
               if ! acc.found && line == "# history settings block {{{" then { found = true; } else
               if   acc.found && line == "# history settings block }}}" then put               else
@@ -137,10 +140,12 @@ let
               { result = acc.result ++ [line]; }
           );
 
-          result = builtins.foldl' reducer initial (lines src);
-          resultStr = unlines result.result;
+          resultStr = mapStringAsLines withReplaces (lines:
+            let result = builtins.foldl' reducer initial lines; in
+            assert result.found == false; # the block closed before end of the file
+            result.result
+          );
         in
-          assert result.found == false; # the block closed before end of the file
           assert resultStr != withReplaces; # something was actually removed
           resultStr;
     in
@@ -165,7 +170,7 @@ let
         then "${builtins.elemAt histFileMatch 0}~/${esc ".${kebab2snake __name}_history"}"
         else line;
     in
-      unlines (map lineMapFn (lines history-settings));
+      mapStringAsLines history-settings (map lineMapFn);
 
   bash-aliases-file-name     = ".bash_aliases";
   history-settings-file-name = "history-settings.bash";

@@ -1,0 +1,24 @@
+--- key-bindings.bash	1970-01-01 02:00:01.000000000 +0200
++++ key-bindings.bash	1970-01-01 02:00:01.000000000 +0200
+@@ -28,8 +28,19 @@
+ if [[ $- =~ i ]]; then
+
+ __skimcmd() {
+-  [ -n "$TMUX_PANE" ] && { [ "${SKIM_TMUX:-0}" != 0 ] || [ -n "$SKIM_TMUX_OPTS" ]; } &&
+-    echo "sk-tmux ${SKIM_TMUX_OPTS:--d${SKIM_TMUX_HEIGHT:-40%}} -- " || echo "sk"
++  local colors_arg=
++  if [[ -v TMUX && -n $TMUX ]] && &>/dev/null type tmuxsh; then
++    local out=
++    if type tmuxsh &>/dev/null; then out=$(tmuxsh co s); fi
++    if [[ $out == dark ]] || [[ $out == light ]]; then
++      colors_arg="--color=$out"
++    fi
++  fi
++  if [ -n "$TMUX_PANE" ] && { [ "${SKIM_TMUX:-0}" != 0 ] || [ -n "$SKIM_TMUX_OPTS" ]; }; then
++    printf %s "sk-tmux $colors_arg ${SKIM_TMUX_OPTS:--d${SKIM_TMUX_HEIGHT:-40%}} -- "
++  else
++    printf %s "sk $colors_arg"
++  fi
+ }
+
+ skim-file-widget() {
