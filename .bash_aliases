@@ -139,3 +139,28 @@ mkdircd() {
 		cd -- "$dir" || return
 	fi
 }
+
+# Slurp everything from stdin and only then spawn provided command and forward
+# captured input into its stdin.
+#
+# Can be useful when spawned command modifies the input for itself.
+# Take for instance this command:
+#
+#   ls | tar -cf test.tar -T -
+#
+# It will drop a warning about “test.tar” file since it will appear in the
+# output of “ls” command.
+#
+# But if you prefix “tar” command with this “consumed-pipe” function it will be
+# spawned only after the output of “ps -ef” is fully captured:
+#
+#   ls | consumed-pipe tar -cf test.tar -T -
+#
+consumed-pipe() {
+	perl -E '
+		BEGIN { @c = @ARGV; @ARGV = () }
+		$x = do { local $/; <> };
+		open(FD, "|-", @c) or die $!;
+		print FD $x
+	' -- "$@"
+}

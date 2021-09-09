@@ -368,11 +368,12 @@ bind 'set show-all-if-ambiguous on'
 bind '"\C-n":menu-complete'
 bind '"\C-p":menu-complete-backward'
 
-# see .bash_aliases for "burp" command
-_burp_completion() {
+_command_wrapper_completion() {
 	COMPREPLY=($(compgen -A function -abck -- "${COMP_WORDS[COMP_CWORD]}"))
 }
-complete -o default -F _burp_completion burp
+# see .bash_aliases for these commands/functions
+complete -o default -F _command_wrapper_completion burp
+complete -o default -F _command_wrapper_completion consumed-pipe
 
 if [[ -f ~/.bash_aliases ]]; then . ~/.bash_aliases; fi
 
