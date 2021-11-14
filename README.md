@@ -132,6 +132,34 @@ nix-shell -E 'with import <nixpkgs> {}; mkShell {buildInputs=[(callPackage nix/s
    . "$HOME/.config/bashrc/.bash_aliases"
    ```
 
+#### Customizations
+
+See the [misc/](misc) directory for setup scripts and aliases.
+You could just import those scripts from `~/.bashrc` and `~/.bash_aliases`.
+Here is an example:
+
+- `~/.bashrc` file:
+
+  ``` sh
+  if [[ -z $PS1 ]]; then return; fi
+  . "$HOME/.config/bashrc/.bashrc"
+
+  . "$HOME/.config/bashrc/misc/setups/fuzzy-finder.bash"
+  . /path/to/skim/shell/completion.bash
+  . /path/to/skim/shell/key-bindings.bash
+  ```
+
+- `~/.bash_aliases` file:
+
+  ``` sh
+  . "$HOME/.config/bashrc/.bash_aliases"
+
+  . "$HOME/.config/bashrc/misc/aliases/skim.bash"
+  . "$HOME/.config/bashrc/misc/aliases/fuzzy-finder.bash"
+  . "$HOME/.config/bashrc/misc/aliases/tmux.bash"
+  . "$HOME/.config/bashrc/misc/aliases/gpg.bash"
+  ```
+
 ## Known issues
 
 ### NixOS
