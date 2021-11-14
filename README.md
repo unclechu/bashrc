@@ -29,6 +29,49 @@ in
 }
 ```
 
+##### Customizations
+
+See the [misc/](misc) directory for setup scripts and aliases.
+You could use `miscSetups` and `miscAliases` Nix attributes
+to add them to the final configuration. An example:
+
+``` nix
+{ pkgs, lib, ... }:
+let
+  wenzels-bashrc-src = pkgs.fetchFromGitHub {
+    owner = "unclechu";
+    repo = "bashrc";
+    rev = "ffffffffffffffffffffffffffffffffffffffff"; # Git commit hash
+    sha256 = "0000000000000000000000000000000000000000000000000000";
+  };
+
+  skim-shell-scripts =
+    pkgs.callPackage
+      "${wenzels-bashrc-src}/nix/integrations/skim-shell-scripts.nix"
+      {};
+
+  wenzels-bash = pkgs.callPackage wenzels-bashrc-src {
+    miscSetups = dirEnvVarName: ''
+      . "''$${dirEnvVarName}/misc/setups/fuzzy-finder.bash"
+      . ${lib.escapeShellArg skim-shell-scripts}/completion.bash
+      . ${lib.escapeShellArg skim-shell-scripts}/key-bindings.bash
+    '';
+
+    miscAliases = dirEnvVarName: ''
+      . "''$${dirEnvVarName}/misc/aliases/skim.bash"
+      . "''$${dirEnvVarName}/misc/aliases/fuzzy-finder.bash"
+      . "''$${dirEnvVarName}/misc/aliases/tmux.bash"
+      . "''$${dirEnvVarName}/misc/aliases/gpg.bash"
+    '';
+  };
+in
+{
+  environment.shells         = [ wenzels-bash ];
+  environment.systemPackages = [ wenzels-bash ];
+  users.users.john.shell     =   wenzels-bash  ;
+}
+```
+
 ##### Use with my Neovim config
 
 See https://github.com/unclechu/neovimrc
