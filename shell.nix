@@ -3,6 +3,9 @@
 let sources = import nix/sources.nix; in
 args@
 { pkgs ? import sources.nixpkgs {}
+, niv ? import sources.niv {}
+, lib ? pkgs.lib
+, buildEnv ? pkgs.buildEnv
 
 # Forwarded arguments.
 # See ‘default.nix’ for details.
@@ -14,9 +17,13 @@ args@
 , miscAliases          ? null
 , dirEnvVarName        ? null
 
+
 # Local options
+
 , with-hsc2hs-pipe-script ? false
 , with-timer-script       ? false
+
+, with-niv ? true
 }:
 let
   forwardedNames = [
@@ -34,13 +41,18 @@ let
 
   hsc2hs-pipe = pkgs.callPackage nix/scripts/hsc2hs-pipe.nix {};
   timer = pkgs.callPackage nix/scripts/timer.nix {};
+
+  shell = pkgs.mkShell {
+    buildInputs =
+      [ wenzels-bash ]
+      ++ lib.optional with-hsc2hs-pipe-script hsc2hs-pipe
+      ++ lib.optional with-timer-script timer
+      ++ lib.optional with-niv niv.niv;
+  };
 in
-pkgs.mkShell {
-  buildInputs = [
-    wenzels-bash
-  ] ++ (
-    if with-hsc2hs-pipe-script then [ hsc2hs-pipe ] else []
-  ) ++ (
-    if with-timer-script then [ timer ] else []
-  );
+shell // {
+  env = buildEnv {
+    name = "wenzels-bash-env";
+    paths = shell.buildInputs;
+  };
 }
