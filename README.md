@@ -123,13 +123,13 @@ nix-shell -E 'with import <nixpkgs> {}; mkShell {buildInputs=[(callPackage nix/s
 
    ``` sh
    if [[ -z $PS1 ]]; then return; fi
-   "$HOME/.config/bashrc/.bashrc"
+   . "$HOME/.config/bashrc/.bashrc"
    ```
 
 3. Create `~/.bash_aliases` with this content:
 
    ``` sh
-   "$HOME/.config/bashrc/.bash_aliases"
+   . "$HOME/.config/bashrc/.bash_aliases"
    ```
 
 ## Known issues
