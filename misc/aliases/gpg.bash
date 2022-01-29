@@ -23,7 +23,9 @@ tmpgpg() (
 			['3|[OPTION]']='
 				Optional [--silent|-s] flag which silents boilerplate noise
 				but keeps stderr output inside shell command from
-				SHELL_COMMAND argument
+				SHELL_COMMAND argument. Alternative to --silent is
+				[--quiet|-q] which also disables commands logging (set -x)
+				for the SHELL_COMMAND as well.
 				'
 		)
 
@@ -31,7 +33,7 @@ tmpgpg() (
 		readarray -t args <<< "$args"
 		printf '\nUsage: %s %s\n\n' "${FUNCNAME[1]}" "${args[*]//[0-9]|/}"
 		printf 'Arguments:\n\n'
-		local arg_name spacer arg_printed arg_description
+		local arg_name arg_printed arg_description
 		for arg_name in "${args[@]}"; do
 			arg_printed='              '
 			arg_description=$(
@@ -59,15 +61,16 @@ tmpgpg() (
 	local ENCRYPTED_FILE; ENCRYPTED_FILE=$(basename -- "$1"); shift
 	local CMD; CMD=$1; shift
 
-	local OPT IS_SILENT=NO; if (( $# > 0 )); then
+	local OPT IS_SILENT=NO IS_QUIET=NO; if (( $# > 0 )); then
 		OPT=$1; shift
-		IS_SILENT=$(
-			set -Eeuo pipefail || exit
-			if [[ $OPT == '-s' || $OPT == --silent ]];
-			then echo YES;
-			else ( >&2 printf 'Unexpected option: "%s"\n' "$OPT" && return 1 )
-			fi
-		)
+		if [[ $OPT == '-s' || $OPT == --silent ]]; then
+			IS_SILENT=YES
+		elif [[ $OPT == '-q' || $OPT == --quiet ]]; then
+			IS_SILENT=YES
+			IS_QUIET=YES
+		else
+			( >&2 printf 'Unexpected option: "%s"\n' "$OPT" && return 1 )
+		fi
 	fi
 
 	if (( $# != 0 )); then
@@ -104,7 +107,8 @@ tmpgpg() (
 			echo 'elif [[ -f ~/.bash_aliases ]]; then'
 			echo '  . ~/.bash_aliases || exit'
 			echo 'fi'
-			echo 'set -x || exit'
+			if [[ $IS_QUIET == NO  ]]; then echo 'set -x || exit'; fi
+			if [[ $IS_QUIET == YES ]]; then echo 'set +x || exit'; fi
 			printf %s "$CMD"
 		)
 		f=$ENCRYPTED_FILE d=$FILE_DIR_PWD t=$TMPDIR "$SHELL" -c "$SHELL_CMD"
