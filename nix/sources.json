@@ -1,16 +1,4 @@
 {
-    "niv": {
-        "branch": "v0.2.19",
-        "description": "Easy dependency management for Nix projects",
-        "homepage": "https://github.com/nmattia/niv",
-        "owner": "nmattia",
-        "repo": "niv",
-        "rev": "62fcf7d0859628f1834d84a7a0706ace0223c27e",
-        "sha256": "06ghvcsarvi32awxvgdxivaji8fsdhv46p49as8xx8whwia9d3rh",
-        "type": "tarball",
-        "url": "https://github.com/nmattia/niv/archive/62fcf7d0859628f1834d84a7a0706ace0223c27e.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
     "nix-utils": {
         "branch": "master",
         "description": "My own Nix utils",

@@ -3,7 +3,6 @@
 let sources = import nix/sources.nix; in
 args@
 { pkgs ? import sources.nixpkgs {}
-, niv ? import sources.niv {}
 , lib ? pkgs.lib
 , buildEnv ? pkgs.buildEnv
 
@@ -22,8 +21,6 @@ args@
 
 , with-hsc2hs-pipe-script ? false
 , with-timer-script       ? false
-
-, with-niv ? true
 }:
 let
   forwardedNames = [
@@ -46,8 +43,7 @@ let
     buildInputs =
       [ wenzels-bash ]
       ++ lib.optional with-hsc2hs-pipe-script hsc2hs-pipe
-      ++ lib.optional with-timer-script timer
-      ++ lib.optional with-niv niv.niv;
+      ++ lib.optional with-timer-script timer;
   };
 in
 shell // {
