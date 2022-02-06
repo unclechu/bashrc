@@ -153,6 +153,7 @@ let
     ${substitutePlaceholders (builtins.readFile "${__bashRC}/${bash-aliases-file-name}")}
 
     # miscellaneous aliases
+    . "''$${dirEnvVarName}"/misc/aliases/nix.bash
     ${miscAliases dirEnvVarName}
     # end: miscellaneous aliases
   '';
