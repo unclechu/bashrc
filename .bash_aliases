@@ -59,24 +59,6 @@ alias gitph='git push origin -- "$(gitb)"'
 # shred with my favorite options
 alias shreddy='shred -vufz -n10'
 
-# nix-shell with forwarded $SHELL
-alias nsh=$(
-	echo -n "nix-shell --command '"
-	echo -n $'export SHELL=\'"\'${SHELL//\\\'}\'"\' && "$SHELL"'
-	echo -n "'"
-)
-
-# shortcut for gpaste cli
-alias gp=$(
-	if   [[ -x $(type -P gpaste-client 2>/dev/null) ]]; then echo 'gpaste-client'
-	elif [[ -x $(type -P gpaste        2>/dev/null) ]]; then echo 'gpaste'
-	else echo 'echo gpaste not found >&2 ; false'
-	fi
-)
-
-# Copy to system clipboard without any line breaks (“i” for “inline”).
-alias gpi='perl -pe chomp | gp'
-
 # any available vi-like editor
 alias v=$(
 	if   [[ -n $EDITOR ]]; then printf %s "$EDITOR"
@@ -86,9 +68,6 @@ alias v=$(
 	else echo 'echo not found any implementation of vi >&2 ; false'
 	fi
 )
-
-# HASKell Interactive (ghci from default stackage LTS)
-alias haski='stack exec ghci --'
 
 # go "$1" levels up
 .x() {
