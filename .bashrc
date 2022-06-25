@@ -403,4 +403,7 @@ if [[ -z $VIMRUNTIME && $TERM == alacritty ]]; then
 	trap '__set_window_title "$BASH_COMMAND"' DEBUG
 fi
 
+# Turn on Vi-like command editing
+set -o vi || exit
+
 # vim: set noet cc=81 tw=80 :
