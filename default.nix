@@ -261,13 +261,18 @@ assert isNonEmptyString patched-history-settings;
 (if inNixShell then shell else {}) // {
   name = __name;
   ${__name} = this-bash;
-  bashRC = __bashRC;
-  inherit (this-bash) history-settings-file-path;
+  inherit (this-bash) shellPath history-settings-file-path bashRC;
 
   inherit
     dir dirEnvVarName
+
     patched-bashrc patched-bashrc-file
     patched-aliases patched-aliases-file
+
     vte-sh-file
-    shell shell-env;
+
+    shell shell-env
+
+    hsc2hs-pipe
+    timer;
 }

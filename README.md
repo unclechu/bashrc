@@ -23,9 +23,9 @@ let
   }) {};
 in
 {
-  environment.shells         = [ wenzels-bash ];
-  environment.systemPackages = [ wenzels-bash ];
-  users.users.john.shell     =   wenzels-bash  ;
+  environment.shells         = [ wenzels-bash.wenzels-bash ];
+  environment.systemPackages = [ wenzels-bash.wenzels-bash ];
+  users.users.john.shell     =   wenzels-bash.wenzels-bash  ;
 }
 ```
 
@@ -66,9 +66,9 @@ let
   };
 in
 {
-  environment.shells         = [ wenzels-bash ];
-  environment.systemPackages = [ wenzels-bash ];
-  users.users.john.shell     =   wenzels-bash  ;
+  environment.shells         = [ wenzels-bash.wenzels-bash ];
+  environment.systemPackages = [ wenzels-bash.wenzels-bash ];
+  users.users.john.shell     =   wenzels-bash.wenzels-bash  ;
 }
 ```
 
@@ -98,7 +98,7 @@ let
     sha256 = "0000000000000000000000000000000000000000000000000000";
   }) {};
 in
-{ environment.systemPackages = [ wenzels-bash wenzels-neovim ]; }
+{ environment.systemPackages = [ wenzels-bash.wenzels-bash wenzels-neovim ]; }
 ```
 
 ##### Also the scripts
