@@ -9,7 +9,7 @@ shopt -s expand_aliases
 # "ls" stuff
 if [[ $(uname) != FreeBSD ]]; then
 	alias ls='ls --color=auto'
-	eval "$(dircolors)"
+	eval -- "$(dircolors)"
 else
 	alias ls='ls -G'
 fi
@@ -82,12 +82,11 @@ alias v=$(
 	else
 		c=$1; shift || return
 	fi
-	local cmd; cmd='cd '
-	for _ in $(seq -- "$c"); do
-		cmd=${cmd}../
+	local path=
+	for (( i=0; i<c; ++i )); do
+		path=${path}../
 	done
-	$cmd
-	return
+	cd -- "$path" || return
 }
 
 # silent process in background

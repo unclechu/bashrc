@@ -5,8 +5,4 @@
 alias setup-nix='. ~/.nix-profile/etc/profile.d/nix.sh'
 
 # nix-shell with forwarded $SHELL
-alias nsh=$(
-	echo -n "nix-shell --command '"
-	echo -n $'export SHELL=\'"\'${SHELL//\\\'}\'"\' && "$SHELL"'
-	echo -n "'"
-)
+alias nsh='nix-shell --command "export SHELL=${SHELL@Q} && ${SHELL@Q}"'
