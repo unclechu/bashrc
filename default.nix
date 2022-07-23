@@ -1,28 +1,29 @@
 # Author: Viacheslav Lotsmanov
 # License: MIT https://raw.githubusercontent.com/unclechu/bashrc/master/LICENSE
+
 let
-  sources     = import nix/sources.nix;
-  dirSuffix   = name: "${name}-dir";
+  sources = import nix/sources.nix;
+  dirSuffix = name: "${name}-dir";
   kebab2snake = builtins.replaceStrings ["-"] ["_"];
 in
+
 assert kebab2snake "foo-bar-baz" == "foo_bar_baz";
-assert kebab2snake "foo-bar-baz" == kebab2snake (kebab2snake "foo-bar-baz");
-# This module is intended to be called with ‘nixpkgs.callPackage’
-{ callPackage
-, runCommand
-, writeText
-, lib
-, vte
-, bashInteractive_5
-, findutils
-, gnused
+assert kebab2snake "foo-bar-baz" == kebab2snake (kebab2snake "foo-bar-baz"); # Idempotence
+
+{ pkgs ? import sources.nixpkgs {}
+, lib ? pkgs.lib
+
+, vte ? pkgs.vte
+, bashInteractive_5 ? pkgs.bashInteractive_5
+, findutils ? pkgs.findutils
+, gnused ? pkgs.gnused
 
 # Overridable dependencies
-, __nix-utils ? callPackage sources.nix-utils {}
+, __nix-utils ? pkgs.callPackage sources.nix-utils {}
 
 # Build options
 , __name ? "wenzels-bash"
-, __bashRC ? (callPackage nix/clean-src.nix {}) ./. # A directory
+, __bashRC ? (pkgs.callPackage nix/clean-src.nix {}) ./. # A directory
 
 # In NixOS you set "EDITOR" environment variable in your "configuration.nix"
 # so you might not want an override from this config (in this case leave this argument default).
@@ -49,20 +50,26 @@ assert kebab2snake "foo-bar-baz" == kebab2snake (kebab2snake "foo-bar-baz");
 
 # "WENZELS_BASH_DIR" by default
 , dirEnvVarName ? kebab2snake (lib.toUpper (dirSuffix __name))
+
+, inNixShell ? false
 }:
+
 assert builtins.isBool overrideEditorEnvVar;
 assert builtins.isFunction miscSetups;
 assert builtins.isFunction miscAliases;
+
 let inherit (__nix-utils) esc wrapExecutable valueCheckers shellCheckers mapStringAsLines; in
+
 assert valueCheckers.isNonEmptyString __name;
 assert ! isNull (builtins.match "^[_A-Z][_A-Z0-9]*$" dirEnvVarName);
+
 let
   vte-sh-file = "${vte}/etc/profile.d/vte.sh";
   bash-exe = "${bashInteractive_5}/bin/bash";
   find-exe = "${findutils}/bin/find";
   sed-exe  = "${gnused}/bin/sed";
 
-  dir = runCommand (dirSuffix __name) {} ''
+  dir = pkgs.runCommand (dirSuffix __name) {} ''
     set -Eeuo pipefail || exit
 
     mkdir tmp
@@ -175,11 +182,11 @@ let
   history-settings-file-name = "history-settings.bash";
 
   patched-bashrc-file =
-    writeText "${__name}-patched-bashrc" patched-bashrc;
+    pkgs.writeText "${__name}-patched-bashrc" patched-bashrc;
   patched-aliases-file =
-    writeText "${__name}-patched-bash-aliases" patched-aliases;
+    pkgs.writeText "${__name}-patched-bash-aliases" patched-aliases;
   patched-history-settings-file =
-    writeText "${__name}-patched-history-settings" patched-history-settings;
+    pkgs.writeText "${__name}-patched-history-settings" patched-history-settings;
 
   checkPhase = ''
     ${shellCheckers.fileIsReadable vte-sh-file}
@@ -187,18 +194,26 @@ let
     ${shellCheckers.fileIsExecutable find-exe}
     ${shellCheckers.fileIsExecutable sed-exe}
   '';
+
+  this-bash = wrapExecutable bash-exe {
+    inherit checkPhase;
+    name = __name;
+    env = { ${dirEnvVarName} = dir; };
+    args = [ "--rcfile" patched-bashrc-file ];
+  } // {
+    shellPath = "/bin/${__name}";
+    history-settings-file-path = "${dir}/${history-settings-file-name}";
+    bashRC = __bashRC;
+  };
 in
+
 assert valueCheckers.isNonEmptyString patched-bashrc;
 assert valueCheckers.isNonEmptyString patched-aliases;
 assert valueCheckers.isNonEmptyString patched-history-settings;
-wrapExecutable bash-exe {
-  inherit checkPhase;
+
+{
   name = __name;
-  env = { ${dirEnvVarName} = dir; };
-  args = [ "--rcfile" patched-bashrc-file ];
-} // {
-  shellPath = "/bin/${__name}";
-  history-settings-file-path = "${dir}/${history-settings-file-name}";
+  ${__name} = this-bash;
   bashRC = __bashRC;
 
   inherit
