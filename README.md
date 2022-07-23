@@ -178,17 +178,14 @@ You can use [Home Manager] in order to include [history-settings.bash] in your
 `~/.bashrc`. Like this in your `configuration.nix`:
 
 ```nix
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 let
-  home-manager =
-    let
-      # Branch "release-20.09"
-      commit = "209566c752c4428c7692c134731971193f06b37c";
-    in
-      fetchTarball {
-        url = "https://github.com/rycee/home-manager/archive/${commit}.tar.gz";
-        sha256 = "1canlfkm09ssbgm3hq0kb9d86bdh84jhidxv75g98zq5wgadk7jm";
-      };
+  home-manager = fetchTarball {
+    # Branch: release-22.05
+    # Date: 2022-06-25
+    url = "https://github.com/nix-community/home-manager/archive/4a3d01fb53f52ac83194081272795aa4612c2381.tar.gz";
+    sha256 = "0sdirpwqk61hnq8lvz4r2j60fxpcpwc8ffmicail2n4h6zifcn9n";
+  };
 
   wenzels-bash = pkgs.callPackage (pkgs.fetchFromGitHub {
     owner = "unclechu";
@@ -205,7 +202,7 @@ in
   # … Other stuff in your "configuration.nix" …
 
   home-manager.users.john.home.file.".bashrc".text = ''
-    . ${pkgs.lib.escapeShellArg wenzels-bash.history-settings-file-path}
+    . ${lib.escapeShellArg wenzels-bash.history-settings-file-path}
   '';
 }
 ```
