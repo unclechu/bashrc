@@ -225,7 +225,7 @@ for you. So just replace `nix-shell` with `nsh` and your `$SHELL` is inherited.
 
 ## Author
 
-Viacheslav Lotsmanov (2013–2021)
+Viacheslav Lotsmanov
 
 ## License
 
