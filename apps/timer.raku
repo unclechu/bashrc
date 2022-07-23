@@ -1,7 +1,7 @@
-#! /usr/bin/env perl6
+#! /usr/bin/env raku
 # Author: Viacheslav Lotsmanov
 # License: MIT https://raw.githubusercontent.com/unclechu/bashrc/master/LICENSE
-use v6;
+use v6.d;
 close $*IN;
 my Int \LineLimit := 60;
 my Str \TimeIsUp  := 'Time is up!';

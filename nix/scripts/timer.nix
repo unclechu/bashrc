@@ -1,37 +1,62 @@
 # Author: Viacheslav Lotsmanov
 # License: MIT https://raw.githubusercontent.com/unclechu/bashrc/master/LICENSE
-let sources = import ../sources.nix; in
+
+let
+  sources = import ../sources.nix;
+in
+
 # This module is intended to be called with ‘nixpkgs.callPackage’
-{ callPackage
+{ lib
+, callPackage
+, writeTextFile
+, symlinkJoin
+, makeWrapper
+
 , rakudo
 , dzen2
 
-# Overridable dependencies
-, __nix-utils ? callPackage sources.nix-utils {}
-
 # Build options
-, __scriptSrc ? ../../apps/timer.pl6
+, __scriptSrc ? ../../apps/timer.raku
 }:
-let
-  inherit (__nix-utils) esc writeCheckedExecutable nameOfModuleFile shellCheckers;
 
-  name = nameOfModuleFile (builtins.unsafeGetAttrPos "a" { a = 0; }).file;
+let
+  name = "timer";
   src = builtins.readFile __scriptSrc;
 
-  raku = "${rakudo}/bin/raku";
-  dzen2-exe = "${dzen2}/bin/dzen2";
+  esc = lib.escapeShellArg;
 
-  checkPhase = ''
-    ${shellCheckers.fileIsExecutable raku}
-    ${shellCheckers.fileIsExecutable dzen2-exe}
-  '';
+  e = {
+    raku = "${rakudo}/bin/raku";
+    dzen2 = "${dzen2}/bin/dzen2";
+  };
+
+  checkPhase = lib.pipe e [
+    builtins.attrValues
+    (map (file: let check = ''[[ -f $f && -r $f && -x $f ]]''; in ''(
+      set -o nounset; f=${esc file}; if ! ${check}; then (set -o xtrace; ${check}) fi
+    )''))
+    (builtins.concatStringsSep "\n")
+  ];
+
+  timerScript = writeTextFile {
+    inherit name checkPhase;
+    executable = true;
+    destination = "/bin/${name}";
+    text = "#! ${e.raku}\n${src}";
+  };
+
+  wrappedTimerScript = symlinkJoin {
+    name = "${name}-wrapped";
+    nativeBuildInputs = [ makeWrapper ];
+    paths = [ timerScript ];
+    postBuild = ''
+      wrapProgram "$out"/bin/${esc name} \
+        --prefix PATH : ${esc (lib.makeBinPath [ dzen2 ])}
+    '';
+  };
 in
-writeCheckedExecutable name checkPhase ''
-  #! ${raku}
-  use v6.d;
-  %*ENV{'PATH'} = q<${dzen2}/bin> ~ ':' ~ %*ENV{'PATH'};
-  ${builtins.replaceStrings ["use v6;"] [""] src}
-'' // {
-  inherit checkPhase;
+
+wrappedTimerScript // {
+  inherit checkPhase timerScript;
   scriptSrc = __scriptSrc;
 }

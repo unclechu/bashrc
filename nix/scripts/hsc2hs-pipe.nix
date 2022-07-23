@@ -1,47 +1,73 @@
 # Author: Viacheslav Lotsmanov
 # License: MIT https://raw.githubusercontent.com/unclechu/bashrc/master/LICENSE
-let sources = import ../sources.nix; in
+
+let
+  sources = import ../sources.nix;
+in
+
 # This module is intended to be called with ‘nixpkgs.callPackage’
-{ callPackage
+{ lib
+, callPackage
+, writeTextFile
+, symlinkJoin
+, makeWrapper
+
 , ghc
 , gcc
 , perl
 , perlPackages
 
-# Overridable dependencies
-, __nix-utils ? callPackage sources.nix-utils { inherit perlPackages; }
-
 # Build options
 , __scriptSrc ? ../../apps/hsc2hs-pipe
 }:
-let
-  inherit (__nix-utils)
-    esc nameOfModuleFile shellCheckers valueCheckers
-    writeCheckedExecutable wrapExecutable wrapExecutableWithPerlDeps;
 
-  name = nameOfModuleFile (builtins.unsafeGetAttrPos "a" { a = 0; }).file;
+let
+  name = "hsc2hs-pipe";
   src = builtins.readFile __scriptSrc;
 
-  perl-exe = "${perl}/bin/perl";
+  esc = lib.escapeShellArg;
 
-  checkPhase = ''
-    ${shellCheckers.fileIsExecutable perl-exe}
-    ${shellCheckers.fileIsExecutable "${ghc}/bin/hsc2hs"}
-    ${shellCheckers.fileIsExecutable "${gcc}/bin/gcc"}
-  '';
+  e = {
+    perl = "${perl}/bin/perl";
+    hsc2hs = "${ghc}/bin/hsc2hs";
+    gcc = "${gcc}/bin/gcc";
+  };
 
-  perlScript = writeCheckedExecutable name checkPhase "#! ${perl-exe}\n${src}";
-  app = wrapExecutable "${perlScript}/bin/${name}" { deps = [ ghc gcc ]; };
+  checkPhase = lib.pipe e [
+    builtins.attrValues
+    (map (file: let check = ''[[ -f $f && -r $f && -x $f ]]''; in ''(
+      set -o nounset; f=${esc file}; if ! ${check}; then (set -o xtrace; ${check}) fi
+    )''))
+    (builtins.concatStringsSep "\n")
+  ];
+
+  perlScript = writeTextFile {
+    inherit name checkPhase;
+    executable = true;
+    destination = "/bin/${name}";
+    text = "#! ${e.perl}\n${src}";
+  };
 
   deps = p: [
     p.IPCSystemSimple
     # p.FileTemp # ‘null’ dummy plug
   ];
 
-  pkg = wrapExecutableWithPerlDeps "${app}/bin/${name}" { inherit deps; };
+  wrappedPerlScript = symlinkJoin {
+    name = "${name}-wrapped";
+    nativeBuildInputs = [ makeWrapper ];
+    paths = [ perlScript ];
+    postBuild = ''
+      wrapProgram "$out"/bin/${esc name} \
+        --set PERL5LIB ${esc (perlPackages.makeFullPerlPath (deps perlPackages))} \
+        --prefix PATH : ${esc (lib.makeBinPath [ ghc gcc ])}
+    '';
+  };
 in
-assert valueCheckers.isNonEmptyString src;
-pkg // {
+
+assert builtins.isString src && src != "";
+
+wrappedPerlScript // {
   inherit checkPhase perlScript;
   perlDependencies = deps perlPackages;
   scriptSrc = __scriptSrc;

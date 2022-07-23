@@ -26,7 +26,10 @@ in
 runCommand "skim-shell-scripts" {
   nativeBuildInputs = [ coreutils patch ];
 } ''
-  set -Eeuo pipefail || exit
+  set -o errexit || exit
+  set -o nounset
+  set -o pipefail
+
   mkdir -- "$out"
   cp -- ${lib.escapeShellArg skim}/share/skim/* "$out"
   cd -- "$out"
