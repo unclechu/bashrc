@@ -13,11 +13,6 @@ assert kebab2snake "foo-bar-baz" == kebab2snake (kebab2snake "foo-bar-baz"); # I
 { pkgs ? import sources.nixpkgs {}
 , lib ? pkgs.lib
 
-, vte ? pkgs.vte
-, bashInteractive_5 ? pkgs.bashInteractive_5
-, findutils ? pkgs.findutils
-, gnused ? pkgs.gnused
-
 # Overridable dependencies
 , __nix-utils ? pkgs.callPackage sources.nix-utils {}
 
@@ -64,29 +59,44 @@ assert valueCheckers.isNonEmptyString __name;
 assert ! isNull (builtins.match "^[_A-Z][_A-Z0-9]*$" dirEnvVarName);
 
 let
-  vte-sh-file = "${vte}/etc/profile.d/vte.sh";
-  bash-exe = "${bashInteractive_5}/bin/bash";
-  find-exe = "${findutils}/bin/find";
-  sed-exe  = "${gnused}/bin/sed";
+  vte-sh-file = "${pkgs.vte}/etc/profile.d/vte.sh";
+
+  # Executables mapping
+  e = {
+    bash = "${pkgs.bashInteractive_5}/bin/bash";
+    find = "${pkgs.findutils}/bin/find";
+    sed = "${pkgs.gnused}/bin/sed";
+    cp = "${pkgs.coreutils}/bin/cp";
+    mv = "${pkgs.coreutils}/bin/mv";
+    mkdir = "${pkgs.coreutils}/bin/mkdir";
+    chmod = "${pkgs.coreutils}/bin/chmod";
+  };
+
+  # Escaped executables mapping (to use in shell strings)
+  es = builtins.mapAttrs (_: esc) e;
 
   dir = pkgs.runCommand (dirSuffix __name) {} ''
-    set -Eeuo pipefail || exit
+    set -o errexit || exit
+    set -o nounset
+    set -o pipefail
 
-    mkdir tmp
+    (${checkPhase})
+
+    ${es.mkdir} tmp
     >/dev/null pushd tmp
 
-    cp -r -- ${esc "${__bashRC}/misc/"}        .
-    cp -- ${esc patched-aliases-file}          ${esc bash-aliases-file-name}
-    cp -- ${esc patched-history-settings-file} ${esc history-settings-file-name}
+    ${es.cp} -r -- ${esc "${__bashRC}/misc/"} .
+    ${es.cp} -- ${esc patched-aliases-file} ${esc bash-aliases-file-name}
+    ${es.cp} -- ${esc patched-history-settings-file} ${esc history-settings-file-name}
 
-    chmod u+w -R .
+    ${es.chmod} u+w -R .
 
-    ${esc find-exe} -type f | while read -r file; do
-      ${esc sed-exe} -i -e ${esc "s/BASH_DIR_PLACEHOLDER/${dirEnvVarName}/g"} -- "$file"
+    ${es.find} -type f | while read -r file; do
+      ${es.sed} -i -e ${esc "s/BASH_DIR_PLACEHOLDER/${dirEnvVarName}/g"} -- "$file"
     done
 
     >/dev/null popd
-    mv tmp -- "$out"
+    ${es.mv} tmp -- "$out"
   '';
 
   substitutePlaceholders = builtins.replaceStrings ["BASH_DIR_PLACEHOLDER"] [dirEnvVarName];
@@ -178,7 +188,7 @@ let
     in
       mapStringAsLines history-settings (map lineMapFn);
 
-  bash-aliases-file-name     = ".bash_aliases";
+  bash-aliases-file-name = ".bash_aliases";
   history-settings-file-name = "history-settings.bash";
 
   patched-bashrc-file =
@@ -190,12 +200,15 @@ let
 
   checkPhase = ''
     ${shellCheckers.fileIsReadable vte-sh-file}
-    ${shellCheckers.fileIsExecutable bash-exe}
-    ${shellCheckers.fileIsExecutable find-exe}
-    ${shellCheckers.fileIsExecutable sed-exe}
+
+    ${lib.pipe e [
+      builtins.attrValues
+      (map shellCheckers.fileIsExecutable)
+      (builtins.concatStringsSep "\n")
+    ]}
   '';
 
-  this-bash = wrapExecutable bash-exe {
+  this-bash = wrapExecutable e.bash {
     inherit checkPhase;
     name = __name;
     env = { ${dirEnvVarName} = dir; };
@@ -215,6 +228,7 @@ assert valueCheckers.isNonEmptyString patched-history-settings;
   name = __name;
   ${__name} = this-bash;
   bashRC = __bashRC;
+  inherit (this-bash) history-settings-file-path;
 
   inherit
     dir dirEnvVarName
