@@ -46,7 +46,11 @@ assert kebab2snake "foo-bar-baz" == kebab2snake (kebab2snake "foo-bar-baz"); # I
 # "WENZELS_BASH_DIR" by default
 , dirEnvVarName ? kebab2snake (lib.toUpper (dirSuffix __name))
 
+# Options for nix-shell
 , inNixShell ? false
+, with-this-bash ? true # Add this Bash (see “__name”) to the shell
+, with-hsc2hs-pipe-script ? false # Add “hsc2hs-pipe” script to the shell
+, with-timer-script ? false # Add “timer” script to the shell
 }:
 
 assert builtins.isBool overrideEditorEnvVar;
@@ -218,13 +222,30 @@ let
     history-settings-file-path = "${dir}/${history-settings-file-name}";
     bashRC = __bashRC;
   };
+
+  hsc2hs-pipe = pkgs.callPackage nix/scripts/hsc2hs-pipe.nix {};
+  timer = pkgs.callPackage nix/scripts/timer.nix {};
+
+  shell = pkgs.mkShell {
+    name = "${__name}-shell";
+
+    buildInputs =
+      lib.optional with-this-bash this-bash
+      ++ lib.optional with-hsc2hs-pipe-script hsc2hs-pipe
+      ++ lib.optional with-timer-script timer;
+  };
+
+  shell-env = pkgs.buildEnv {
+    name = "${shell.name}-env";
+    paths = shell.buildInputs;
+  };
 in
 
 assert valueCheckers.isNonEmptyString patched-bashrc;
 assert valueCheckers.isNonEmptyString patched-aliases;
 assert valueCheckers.isNonEmptyString patched-history-settings;
 
-{
+(if inNixShell then shell else {}) // {
   name = __name;
   ${__name} = this-bash;
   bashRC = __bashRC;
@@ -234,5 +255,6 @@ assert valueCheckers.isNonEmptyString patched-history-settings;
     dir dirEnvVarName
     patched-bashrc patched-bashrc-file
     patched-aliases patched-aliases-file
-    vte-sh-file;
+    vte-sh-file
+    shell shell-env;
 }
