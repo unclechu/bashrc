@@ -5,6 +5,7 @@ let
   sources = import nix/sources.nix;
   dirSuffix = name: "${name}-dir";
   kebab2snake = builtins.replaceStrings ["-"] ["_"];
+  isNonEmptyString = x: builtins.isString x && x != "";
 in
 
 assert kebab2snake "foo-bar-baz" == "foo_bar_baz";
@@ -57,12 +58,22 @@ assert builtins.isBool overrideEditorEnvVar;
 assert builtins.isFunction miscSetups;
 assert builtins.isFunction miscAliases;
 
-let inherit (__nix-utils) esc wrapExecutable valueCheckers shellCheckers mapStringAsLines; in
+let inherit (__nix-utils) wrapExecutable mapStringAsLines; in
 
-assert valueCheckers.isNonEmptyString __name;
+assert isNonEmptyString __name;
 assert ! isNull (builtins.match "^[_A-Z][_A-Z0-9]*$" dirEnvVarName);
 
 let
+  esc = lib.escapeShellArg;
+
+  fileIsReadable = file: let check = ''[[ -f $f && -r $f ]]''; in ''(
+    set -o nounset; f=${esc file}; if ! ${check}; then (set -o xtrace; ${check}) fi
+  )'';
+
+  fileIsExecutable = file: let check = ''[[ -f $f && -r $f && -x $f ]]''; in ''(
+    set -o nounset; f=${esc file}; if ! ${check}; then (set -o xtrace; ${check}) fi
+  )'';
+
   vte-sh-file = "${pkgs.vte}/etc/profile.d/vte.sh";
 
   # Executables mapping
@@ -84,7 +95,9 @@ let
     set -o nounset
     set -o pipefail
 
-    (${checkPhase})
+    (
+      ${checkPhase}
+    )
 
     ${es.mkdir} tmp
     >/dev/null pushd tmp
@@ -203,11 +216,11 @@ let
     pkgs.writeText "${__name}-patched-history-settings" patched-history-settings;
 
   checkPhase = ''
-    ${shellCheckers.fileIsReadable vte-sh-file}
+    ${fileIsReadable vte-sh-file}
 
     ${lib.pipe e [
       builtins.attrValues
-      (map shellCheckers.fileIsExecutable)
+      (map fileIsExecutable)
       (builtins.concatStringsSep "\n")
     ]}
   '';
@@ -241,9 +254,9 @@ let
   };
 in
 
-assert valueCheckers.isNonEmptyString patched-bashrc;
-assert valueCheckers.isNonEmptyString patched-aliases;
-assert valueCheckers.isNonEmptyString patched-history-settings;
+assert isNonEmptyString patched-bashrc;
+assert isNonEmptyString patched-aliases;
+assert isNonEmptyString patched-history-settings;
 
 (if inNixShell then shell else {}) // {
   name = __name;
