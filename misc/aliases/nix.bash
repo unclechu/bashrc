@@ -6,3 +6,6 @@ alias setup-nix='. ~/.nix-profile/etc/profile.d/nix.sh'
 
 # nix-shell with forwarded $SHELL
 alias nsh='nix-shell --command "export SHELL=${SHELL@Q} && ${SHELL@Q}"'
+
+# Enter Nix Flakes default dev-shell using own $SHELL
+alias nd='nix develop -c "$SHELL"'
