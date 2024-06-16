@@ -60,14 +60,15 @@ alias gitph='git push origin -- "$(gitb)"'
 alias shreddy='shred -vufz -n10'
 
 # any available vi-like editor
-alias v=$(
+# shellcheck disable=SC2139
+alias v="$(
 	if   [[ -n $EDITOR ]]; then printf %s "$EDITOR"
 	elif [[ -x $(type -P nvim 2>/dev/null) ]]; then echo nvim
 	elif [[ -x $(type -P  vim 2>/dev/null) ]]; then echo  vim
 	elif [[ -x $(type -P  vi  2>/dev/null) ]]; then echo  vi
 	else echo 'echo not found any implementation of vi >&2 ; false'
 	fi
-)
+)"
 
 # go "$1" levels up
 .x() {
@@ -89,6 +90,17 @@ alias v=$(
 	cd -- "$path" || return
 }
 
+# Resolve full path of an executable following all the symlinks on the way.
+#
+# For example (in NixOS):
+#
+#   $ type -P bash
+#   /run/current-system/sw/bin/bash
+#   $ p bash
+#   /nix/store/rdd4pnr4x9rqc9wgbibhngv217w2xvxl-bash-interactive-5.2p26/bin/bash
+#
+p() { readlink -f -- "$(type -P -- "$1")"; }
+
 # silent process in background
 burp() {
 	if (( $# < 1 )); then
@@ -96,7 +108,7 @@ burp() {
 		return 1
 	fi
 	local APP; APP=$1; shift || return
-	"$APP" "$@" 0</dev/null &>/dev/null &
+	"$APP" "$@" 0</dev/null &>/dev/null & disown
 	return
 }
 
