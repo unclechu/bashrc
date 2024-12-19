@@ -79,7 +79,7 @@ let
 
   # Executables mapping
   e = {
-    bash = "${pkgs.bashInteractive_5}/bin/bash";
+    bash = "${pkgs.bashInteractive}/bin/bash";
     find = "${pkgs.findutils}/bin/find";
     sed = "${pkgs.gnused}/bin/sed";
     cp = "${pkgs.coreutils}/bin/cp";
