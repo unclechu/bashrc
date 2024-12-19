@@ -32,6 +32,7 @@ assert kebab2snake "foo-bar-baz" == kebab2snake (kebab2snake "foo-bar-baz"); # I
 #       . "''$${dirEnvVarName}"/misc/setups/fuzzy-finder.bash
 #       . ${esc nixpkgs.skim}/share/skim/completion.bash
 #       . ${esc nixpkgs.skim}/share/skim/key-bindings.bash
+#       . "''$${dirEnvVarName}"/misc/setups/skim-fix.bash
 #     '';
 #     miscAliases = dirEnvVarName: ''
 #       . "''$${dirEnvVarName}"/misc/aliases/skim.bash

@@ -55,6 +55,7 @@ let
       . "''$${dirEnvVarName}/misc/setups/fuzzy-finder.bash"
       . ${lib.escapeShellArg skim-shell-scripts}/completion.bash
       . ${lib.escapeShellArg skim-shell-scripts}/key-bindings.bash
+      . "''$${dirEnvVarName}/misc/setups/skim-fix.bash"
     '';
 
     miscAliases = dirEnvVarName: ''
@@ -147,6 +148,7 @@ Here is an example:
   . "$HOME/.config/bashrc/misc/setups/fuzzy-finder.bash"
   . /path/to/skim/shell/completion.bash
   . /path/to/skim/shell/key-bindings.bash
+  . "$HOME/.config/bashrc/misc/setups/skim-fix.bash"
   ```
 
 - `~/.bash_aliases` file:
