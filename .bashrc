@@ -406,4 +406,15 @@ fi
 # Turn on Vi-like command editing
 set -o vi || exit
 
+# Bind the “shell-expand-line” keys for Vi-mode.
+#
+# Outside of vi-mode it is available by pressing Ctrl+Alt+e.
+#
+# Allows to expand a command substitution under cursor in current shell command
+# before executing it for editing. For example: `echo $(date)`, as long as your
+# cursor is under `$(date)` the hotkey will inline the result (stdout) of `date`
+# execution.
+bind -m vi-insert '"\C-x\C-e": shell-expand-line' || exit
+bind -m vi-command '"\C-x\C-e": shell-expand-line' || exit
+
 # vim: set noet cc=81 tw=80 :
