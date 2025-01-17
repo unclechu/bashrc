@@ -26,7 +26,7 @@ f() (
 
 # (h)istory + (f)uzzy
 if [[ ! -v NO_TMUX_F || -z $NO_TMUX_F ]] && [[ -v TMUX && -n $TMUX ]]; then
-	alias hf='history | sk-tmux | sed "s/^\s*[0-9]\+\s\+//"'
+	alias hf='history | tac | sk-tmux | sed "s/^\s*[0-9]\+\s\+//"'
 else
-	alias hf='history | sk | sed "s/^\s*[0-9]\+\s\+//"'
+	alias hf='history | tac | sk | sed "s/^\s*[0-9]\+\s\+//"'
 fi
