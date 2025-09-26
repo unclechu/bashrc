@@ -5,7 +5,7 @@
 
  __skimcmd() {
 -  [ -n "$TMUX_PANE" ] && { [ "${SKIM_TMUX:-0}" != 0 ] || [ -n "$SKIM_TMUX_OPTS" ]; } &&
--    echo "sk-tmux ${SKIM_TMUX_OPTS:--d${SKIM_TMUX_HEIGHT:-40%}} -- " || echo "sk"
+-    echo "sk --tmux=${SKIM_TMUX_OPTS:-center,${SKIM_TMUX_HEIGHT:-40%}}" || echo "sk"
 +  local colors_arg=
 +  if [[ -v TMUX && -n $TMUX ]] && &>/dev/null type tmuxsh; then
 +    local out=
@@ -15,7 +15,7 @@
 +    fi
 +  fi
 +  if [ -n "$TMUX_PANE" ] && { [ "${SKIM_TMUX:-0}" != 0 ] || [ -n "$SKIM_TMUX_OPTS" ]; }; then
-+    printf %s "sk-tmux $colors_arg ${SKIM_TMUX_OPTS:--d${SKIM_TMUX_HEIGHT:-40%}} -- "
++    printf %s "sk $colors_arg --tmux=${SKIM_TMUX_OPTS:-center,${SKIM_TMUX_HEIGHT:-40%}} -- "
 +  else
 +    printf %s "sk $colors_arg"
 +  fi
