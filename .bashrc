@@ -346,6 +346,15 @@ prompt_command() {
 	if [[ -n $VTE_VERSION && -z $VIMRUNTIME ]]; then
 		__custom_vte_prompt_command
 	fi
+
+	if [[ -n $TMUX ]]; then
+		# Spawn in background silently avoiding extra lag in the Bash prompt.
+		# If the executable is not found it’s fine, the errors are suppressed.
+		{
+			ACTIVE=$(tmux display-message -p -F '#{pane_active}' -t "$TMUX_PANE")
+			if [[ $ACTIVE == 1 ]]; then tmux-report-current-pane-cwd; fi
+		} <&- &>/dev/null & disown
+	fi
 }
 
 # set prompt command (title update and color prompt)
