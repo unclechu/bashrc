@@ -19,12 +19,12 @@ __my_skim_select__() {
 
 	local sk_cmd
 	if [[ ! -v NO_TMUX_F || -z $NO_TMUX_F ]] && [[ -v TMUX && -n $TMUX ]]; then
-		sk_cmd=sk-tmux
+		sk_cmd=(sk --tmux 'center,80%,60%')
 	else
-		sk_cmd=sk
+		sk_cmd=(sk)
 	fi
 
-	eval -- "$cmd" | "$sk_cmd" | while read -r x; do printf %q "$x"; done
+	eval -- "$cmd" | "${sk_cmd[@]}" | while read -r x; do printf %q "$x"; done
 	echo
 }
 bind -m vi-insert '"\C-t": "\C-u$(__my_skim_select__)\C-x\C-e "'

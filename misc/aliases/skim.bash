@@ -18,7 +18,7 @@ f() (
 	fi
 
 	if [[ ! -v NO_TMUX_F || -z $NO_TMUX_F ]] && "$in_tmux"; then
-		sk-tmux "${colors_arg[@]}" "$@"
+		sk --tmux center,80%,60% "${colors_arg[@]}" "$@"
 	else
 		sk "${colors_arg[@]}" "$@"
 	fi
@@ -26,7 +26,7 @@ f() (
 
 # (h)istory + (f)uzzy
 if [[ ! -v NO_TMUX_F || -z $NO_TMUX_F ]] && [[ -v TMUX && -n $TMUX ]]; then
-	alias hf='history | sk-tmux --tac --no-sort | sed "s/^\s*[0-9]\+\s\+//"'
+	alias hf='history | sk --tmux center,80%,60% --tac --no-sort | sed "s/^\s*[0-9]\+\s\+//"'
 else
 	alias hf='history | sk --tac --no-sort | sed "s/^\s*[0-9]\+\s\+//"'
 fi
