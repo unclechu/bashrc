@@ -50,9 +50,6 @@ assert kebab2snake "foo-bar-baz" == kebab2snake (kebab2snake "foo-bar-baz"); # I
 
 # Options for nix-shell
 , inNixShell ? false
-, with-this-bash ? true # Add this Bash (see “__name”) to the shell
-, with-hsc2hs-pipe-script ? false # Add “hsc2hs-pipe” script to the shell
-, with-timer-script ? false # Add “timer” script to the shell
 }:
 
 assert builtins.isBool overrideEditorEnvVar;
@@ -237,16 +234,9 @@ let
     bashRC = __bashRC;
   };
 
-  hsc2hs-pipe = pkgs.callPackage nix/scripts/hsc2hs-pipe.nix {};
-  timer = pkgs.callPackage nix/scripts/timer.nix {};
-
   shell = pkgs.mkShell {
     name = "${__name}-shell";
-
-    buildInputs =
-      lib.optional with-this-bash this-bash
-      ++ lib.optional with-hsc2hs-pipe-script hsc2hs-pipe
-      ++ lib.optional with-timer-script timer;
+    buildInputs = [ this-bash ];
   };
 
   shell-env = pkgs.buildEnv {
@@ -273,7 +263,5 @@ assert isNonEmptyString patched-history-settings;
     vte-sh-file
 
     shell shell-env
-
-    hsc2hs-pipe
-    timer;
+    ;
 }

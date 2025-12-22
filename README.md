@@ -102,16 +102,6 @@ in
 { environment.systemPackages = [ wenzels-bash.wenzels-bash wenzels-neovim ]; }
 ```
 
-##### Also the scripts
-
-```sh
-nix-shell -E 'with import <nixpkgs> {}; mkShell {buildInputs=[(callPackage nix/scripts/timer.nix {})];}' --run 'timer --help'
-```
-
-```sh
-nix-shell -E 'with import <nixpkgs> {}; mkShell {buildInputs=[(callPackage nix/scripts/hsc2hs-pipe.nix {})];}' --run 'hsc2hs-pipe --help'
-```
-
 ### Other GNU/Linux distributions
 
 1. Clone this repo:

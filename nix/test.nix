@@ -9,8 +9,6 @@
 #   nix-shell --pure nix/test.nix --run 'wenzels-bash -ic "l"'
 #   nix-shell --pure nix/test.nix --run 'wenzels-bash -ic "type f"'
 #   nix-shell --pure nix/test.nix --run 'wenzels-bash -ic "type tm"'
-#   nix-shell --pure nix/test.nix --run 'hsc2hs-pipe --help'
-#   nix-shell --pure nix/test.nix --run 'timer --help'
 #
 
 let
@@ -41,6 +39,4 @@ pkgs.callPackage ../. {
   '';
 
   inherit inNixShell;
-  with-hsc2hs-pipe-script = true;
-  with-timer-script = true;
 }
