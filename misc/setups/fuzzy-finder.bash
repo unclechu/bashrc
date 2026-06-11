@@ -18,6 +18,7 @@ __FUZZY_FINDER_DEFAULT_COMMAND='
 '
 # Fix Skim 4.0.0 regression:
 # https://github.com/skim-rs/skim/issues/1086
+__FUZZY_FINDER_DEFAULT_COMMAND="${__FUZZY_FINDER_DEFAULT_COMMAND//+(\\[[:space:]])/ }"
 __FUZZY_FINDER_DEFAULT_COMMAND="${__FUZZY_FINDER_DEFAULT_COMMAND//+([[:space:]])/ }"
 
 export SKIM_DEFAULT_COMMAND=$__FUZZY_FINDER_DEFAULT_COMMAND
