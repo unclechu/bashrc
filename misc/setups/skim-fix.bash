@@ -19,7 +19,7 @@ __my_skim_select__() {
 
 	local sk_cmd
 	if [[ ! -v NO_TMUX_F || -z $NO_TMUX_F ]] && [[ -v TMUX && -n $TMUX ]]; then
-		sk_cmd=(sk --tmux 'center,80%,60%')
+		sk_cmd=(sk --tmux='center,80%,60%')
 	else
 		sk_cmd=(sk)
 	fi
