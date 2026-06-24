@@ -2,9 +2,11 @@
 # License: MIT https://raw.githubusercontent.com/unclechu/bashrc/master/LICENSE
 
 # This module is intended to be called with ‘nixpkgs.callPackage’
-{ lib, runCommand, coreutils, patch, skim }:
+{ lib, runCommand, patch, skim }:
+
 let
   patchFile = ../patches/skim-shell-scripts-tmux-colorscheme-detection.patch;
+  esc = lib.escapeShellArg;
 in
 
 # A usage example:
@@ -24,14 +26,15 @@ in
 #   }
 #
 runCommand "skim-shell-scripts" {
-  nativeBuildInputs = [ coreutils patch ];
+  nativeBuildInputs = [ patch ];
 } ''
-  set -o errexit || exit
-  set -o nounset
-  set -o pipefail
+  set -o errexit || exit; set -o errtrace; set -o nounset; set -o pipefail
 
   mkdir -- "$out"
-  cp -- ${lib.escapeShellArg skim}/share/skim/* "$out"
+
+  cp -- ${esc "${skim.src}/shell/completion.bash"} "$out/"
+  cp -- ${esc "${skim.src}/shell/key-bindings.bash"} "$out/"
+
   cd -- "$out"
-  patch < ${lib.escapeShellArg "${patchFile}"}
+  patch < ${esc "${patchFile}"}
 ''
