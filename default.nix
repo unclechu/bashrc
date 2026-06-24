@@ -292,6 +292,17 @@ let
     ]}
   '';
 
+  smokeTest = ''(
+    set -o errexit; set -o errtrace; set -o nounset; set -o pipefail
+    "$bin" --version | grep -q '^GNU bash'
+    x=$("$bin" -ic 'printf %s "$HISTFILE"')
+    expected=$HOME/${esc history-file-name}
+    if [[ "$x" != "$expected" ]]; then
+      >&2 printf 'History file is “%s” but expected “%s”' "$x" "$expected"
+      exit 1
+    fi
+  )'';
+
   this-bash = (pkgs.stdenvNoCC.mkDerivation rec {
     name = __name;
     pname = __name;
@@ -320,16 +331,7 @@ let
     installCheckPhase = ''
       runHook preInstallCheck
       bin="$out"/bin/${esc meta.mainProgram}
-
-      # Smoke test
-      "$bin" --version | grep -q '^GNU bash'
-      x=$("$bin" -ic 'printf %s "$HISTFILE"')
-      expected=$HOME/${esc history-file-name}
-      if [[ "$x" != "$expected" ]]; then
-        >&2 printf 'History file is “%s” but expected “%s”' "$x" "$expected"
-        exit 1
-      fi
-
+      ${smokeTest}
       runHook postInstallCheck
     '';
   }) // {
