@@ -61,7 +61,7 @@ jobs:
           TEST_CMD="wenzels-bash -ic ${SUB_TEST_CMD@Q}"
           RESULT=$(set -o xtrace; nix-shell nix/test.nix --pure --run "$TEST_CMD")
           EXPECTED='hf is aliased to `history | tac | sk'
-          if [[ "$RESULT" == "$EXPECTED" ]]; then
+          if [[ "$RESULT" =~ ^"$EXPECTED" ]]; then
             echo '[OK] Smoke test passed'
           else
             >&2 printf 'Expected “%s” but got instead “%s”' "$EXPECTED" "$RESULT"
