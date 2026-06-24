@@ -72,11 +72,10 @@ jobs:
         shell: bash
         run: |
           set -o errexit || exit; set -o errtrace; set -o nounset; set -o pipefail
-          nix-shell
-          OUTPUTS_COUNT=$(printf '%s\n' result* | wc -l)
-          if (( OUTPUTS_COUNT < 6 )); then
-            >&2 printf 'Unexpected outputs amount: “%s”\n' "$OUTPUTS_COUNT"
-            exit 1
-          fi
+          set -o xtrace
+          nix-shell -A wenzels-bash
+          nix-shell -A shell
+          nix-shell -A patched-bashrc-file
+          nix-shell -A patched-aliases-file
           nix-shell nix/test.nix -A wenzels-bash
           nix-shell nix/test.nix -A shell
