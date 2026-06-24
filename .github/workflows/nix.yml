@@ -1,0 +1,69 @@
+name: Nix CI
+
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  neovim-nix-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+            system-features = nixos-test benchmark big-parallel kvm
+
+      - name: Build Neovim config and run a smoke test
+        shell: bash
+        run: |
+          set -o errexit || exit; set -o errtrace; set -o nounset; set -o pipefail
+          SUB_TEST_CMD='printf %s "$HISTFILE"'
+          TEST_CMD="wenzels-bash -ic ${SUB_TEST_CMD@Q}"
+          RESULT=$(set -o xtrace; nix-shell --pure --run "$TEST_CMD")
+          EXPECTED=$HOME/.wenzels-bash-history
+          if [[ "$RESULT" == "$EXPECTED" ]]; then
+            echo '[OK] Smoke test passed'
+          else
+            >&2 printf 'HISTFILE is “%s” while expected “%s”' "$RESULT" "$EXPECTED"
+            exit 1
+          fi
+
+      - name: No special aliases are set if no extensions are enabled
+        shell: bash
+        run: |
+          set -o errexit || exit; set -o errtrace; set -o nounset; set -o pipefail
+          SUB_TEST_CMD='type hf 2>&1 || true'
+          TEST_CMD="wenzels-bash -ic ${SUB_TEST_CMD@Q}"
+          RESULT=$(set -o xtrace; nix-shell --pure --run "$TEST_CMD")
+          EXPECTED='bash: type: hf: not found'
+          if [[ "$RESULT" == "$EXPECTED" ]]; then
+            echo '[OK] Smoke test passed'
+          else
+            >&2 printf 'Expected “%s” but got instead “%s”' "$EXPECTED" "$RESULT"
+            exit 1
+          fi
+
+      - name: Build nix/test.nix and run a smoke test
+        shell: bash
+        run: |
+          set -o errexit || exit; set -o errtrace; set -o nounset; set -o pipefail
+          SUB_TEST_CMD='type hf 2>&1 || true'
+          TEST_CMD="wenzels-bash -ic ${SUB_TEST_CMD@Q}"
+          RESULT=$(set -o xtrace; nix-shell nix/test.nix --pure --run "$TEST_CMD")
+          EXPECTED='hf is aliased to `history | tac | sk'
+          if [[ "$RESULT" == "$EXPECTED" ]]; then
+            echo '[OK] Smoke test passed'
+          else
+            >&2 printf 'Expected “%s” but got instead “%s”' "$EXPECTED" "$RESULT"
+            exit 1
+          fi

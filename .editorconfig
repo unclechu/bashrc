@@ -19,3 +19,7 @@ indent_size = 2
 [nix/sources.json]
 indent_style = space
 indent_size = 4
+
+[.github/workflows/*.yml]
+indent_style = space
+indent_size = 2
