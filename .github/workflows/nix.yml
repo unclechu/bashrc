@@ -67,3 +67,16 @@ jobs:
             >&2 printf 'Expected “%s” but got instead “%s”' "$EXPECTED" "$RESULT"
             exit 1
           fi
+
+      - name: Everything builds successfully and output amounts is correct
+        shell: bash
+        run: |
+          set -o errexit || exit; set -o errtrace; set -o nounset; set -o pipefail
+          nix-shell
+          OUTPUTS_COUNT=$(printf '%s\n' result* | wc -l)
+          if (( OUTPUTS_COUNT < 6 )); then
+            >&2 printf 'Unexpected outputs amount: “%s”\n' "$OUTPUTS_COUNT"
+            exit 1
+          fi
+          nix-shell nix/test.nix -A wenzels-bash
+          nix-shell nix/test.nix -A shell
