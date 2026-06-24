@@ -11,32 +11,47 @@
 #   nix-shell --pure nix/test.nix --run 'wenzels-bash -ic "type tm"'
 #
 
-let
-  sources = import ./sources.nix;
-in
+let sources = import ./sources.nix; in
 
 { pkgs ? import sources.nixpkgs {}
 , lib ? pkgs.lib
+
+# Options for nix-shell
 , inNixShell ? false
 }:
 
 let
-  skim-shell-scripts = pkgs.callPackage integrations/skim-shell-scripts.nix {};
-in
+  bashrc = pkgs.callPackage ../. {
+    inherit miscSetups miscAliases;
+  };
 
-pkgs.callPackage ../. {
-  miscAliases = varName: ''
-    . "''$${varName}/misc/aliases/fuzzy-finder.bash"
-    . "''$${varName}/misc/aliases/skim.bash"
-    . "''$${varName}/misc/aliases/tmux.bash"
-  '';
+  skim-shell-scripts =
+    pkgs.callPackage integrations/skim-shell-scripts.nix {};
 
-  miscSetups = varName: ''
-    . "''$${varName}"/misc/setups/fuzzy-finder.bash
+  miscSetups = dirEnvVarName: ''
+    . "''$${dirEnvVarName}/misc/setups/fuzzy-finder.bash"
     . ${lib.escapeShellArg skim-shell-scripts}/completion.bash
     . ${lib.escapeShellArg skim-shell-scripts}/key-bindings.bash
-    . "''$${varName}"/misc/setups/skim-fix.bash
+    . "''$${dirEnvVarName}/misc/setups/skim-fix.bash"
+    . "''$${dirEnvVarName}/misc/setups/direnv.bash"
   '';
 
-  inherit inNixShell;
+  miscAliases = dirEnvVarName: ''
+    . "''$${dirEnvVarName}/misc/aliases/skim.bash"
+    . "''$${dirEnvVarName}/misc/aliases/fuzzy-finder.bash"
+    . "''$${dirEnvVarName}/misc/aliases/nvr.bash"
+    . "''$${dirEnvVarName}/misc/aliases/tmux.bash"
+    . "''$${dirEnvVarName}/misc/aliases/gpg.bash"
+    . "''$${dirEnvVarName}/misc/aliases/gpaste.bash"
+  '';
+
+  shell = pkgs.mkShell {
+    name = "${bashrc.name}-test-shell";
+    buildInputs = [ bashrc.${bashrc.name} ];
+  };
+in
+
+(if inNixShell then shell else {}) // {
+  ${bashrc.name} = bashrc;
+  inherit shell;
 }
