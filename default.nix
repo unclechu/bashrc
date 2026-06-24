@@ -14,9 +14,6 @@ assert kebab2snake "foo-bar-baz" == kebab2snake (kebab2snake "foo-bar-baz"); # I
 { pkgs ? import sources.nixpkgs {}
 , lib ? pkgs.lib
 
-# Overridable dependencies
-, __nix-utils ? pkgs.callPackage sources.nix-utils {}
-
 # Build options
 , __name ? "wenzels-bash"
 , __bashRC ? (pkgs.callPackage nix/clean-src.nix {}) ./. # A directory
@@ -56,10 +53,12 @@ assert builtins.isBool overrideEditorEnvVar;
 assert builtins.isFunction miscSetups;
 assert builtins.isFunction miscAliases;
 
-let inherit (__nix-utils) wrapExecutable mapStringAsLines; in
-
 assert isNonEmptyString __name;
 assert ! isNull (builtins.match "^[_A-Z][_A-Z0-9]*$" dirEnvVarName);
+
+# These strings are not supposed to have any string context.
+assert !(builtins.hasContext __name);
+assert !(builtins.hasContext dirEnvVarName);
 
 let
   esc = lib.escapeShellArg;
@@ -71,6 +70,22 @@ let
   fileIsExecutable = file: let check = ''[[ -f $f && -r $f && -x $f ]]''; in ''(
     set -o nounset; f=${esc file}; if ! ${check}; then (set -o xtrace; ${check}) fi
   )'';
+
+  # Check that `b` preserves context of `a` but can be bigger.
+  preservesContext =
+    let
+      fn = a: b:
+        let bContext = builtins.getContext b; in
+        builtins.all
+          (k: builtins.hasAttr k bContext)
+          (builtins.attrNames (builtins.getContext a));
+    in
+      assert let a = "${pkgs.bash}"; b = "${a}"; in fn a b && fn b a;
+      assert let a = "${pkgs.bash}"; b = "${a}${pkgs.dash}"; in fn a b && !(fn b a);
+      fn;
+
+  # Returns `b` of `preservesContext`
+  assertPreservesContext = a: b: assert preservesContext a b; b;
 
   vte-sh-file = "${pkgs.vte}/etc/profile.d/vte.sh";
 
@@ -89,9 +104,7 @@ let
   es = builtins.mapAttrs (_: esc) e;
 
   dir = pkgs.runCommand (dirSuffix __name) {} ''
-    set -o errexit || exit
-    set -o nounset
-    set -o pipefail
+    set -o errexit || exit; set -o errtrace; set -o nounset; set -o pipefail
 
     (
       ${checkPhase}
@@ -114,30 +127,44 @@ let
     ${es.mv} tmp -- "$out"
   '';
 
-  substitutePlaceholders = builtins.replaceStrings ["BASH_DIR_PLACEHOLDER"] [dirEnvVarName];
+  substitutePlaceholders =
+    builtins.replaceStrings
+      ["BASH_DIR_PLACEHOLDER"]
+      [dirEnvVarName];
 
   patched-bashrc =
     let
-      withReplaces =
-        builtins.replaceStrings [
-          "'/usr/local/etc/profile.d/vte.sh'"
-          "'/etc/profile.d/vte.sh'"
-          "if [[ -f ~/.bash_aliases ]]; then . ~/.bash_aliases; fi"
-        ] [
-          (esc vte-sh-file)
-          (esc vte-sh-file)
-          ''
-            . "''$${dirEnvVarName}"/${esc bash-aliases-file-name}
-
-            # miscellaneous setups
-            ${miscSetups dirEnvVarName}
-            # end: miscellaneous setups
-          ''
-        ] (substitutePlaceholders (builtins.readFile "${__bashRC}/.bashrc"));
-
-      withoutEditorOverride =
+      withReplaces = src:
         let
-          # isPluginsImport = x: builtins.match ".*so.*'/plugins.vim'" x != null;
+          setups = miscSetups dirEnvVarName;
+        in
+          lib.pipe src [
+            (builtins.replaceStrings [
+              "'/usr/local/etc/profile.d/vte.sh'"
+              "'/etc/profile.d/vte.sh'"
+              "if [[ -f ~/.bash_aliases ]]; then . ~/.bash_aliases; fi"
+            ] [
+              (esc vte-sh-file)
+              (esc vte-sh-file)
+              ''
+                . "''$${dirEnvVarName}"/${esc bash-aliases-file-name}
+
+                # miscellaneous setups
+                ${setups}
+                # end: miscellaneous setups
+              ''
+            ])
+            # The context for substitutions is preserved
+            (assertPreservesContext vte-sh-file)
+            (assertPreservesContext setups)
+            # Something was actually changed
+            (x: assert x != src; x)
+            # String context is preserved
+            (assertPreservesContext src)
+          ];
+
+      withoutEditorOverride = src:
+        let
           initial = { found = false; result = []; };
 
           reducer = acc: line: acc // (
@@ -146,15 +173,23 @@ let
             if acc.found                                 then {                } else
             { result = acc.result ++ [line]; }
           );
-
-          resultStr = mapStringAsLines withReplaces (lines:
-            let result = builtins.foldl' reducer initial lines; in
-            assert result.found == false; # the block closed before end of the file
-            result.result
-          );
         in
-          assert resultStr != withReplaces; # something was actually removed
-          resultStr;
+          lib.pipe src [
+            (builtins.split "\n")
+            (builtins.filter builtins.isString)
+            (lines:
+              let result = builtins.foldl' reducer initial lines; in
+              assert result.found == false; # the block closed before end of the file
+              result.result
+            )
+            (builtins.concatStringsSep "\n")
+            # Restore string context after `builtins.split` cuts it off
+            (lib.flip builtins.appendContext (builtins.getContext src))
+            # Something was actually removed
+            (x: assert x != src; x)
+            # String context is preserved
+            (assertPreservesContext src)
+          ];
 
       inlineHistorySettings = src:
         let
@@ -169,17 +204,37 @@ let
               if   acc.found                                           then {}                else
               { result = acc.result ++ [line]; }
           );
-
-          resultStr = mapStringAsLines withReplaces (lines:
-            let result = builtins.foldl' reducer initial lines; in
-            assert result.found == false; # the block closed before end of the file
-            result.result
-          );
         in
-          assert resultStr != withReplaces; # something was actually removed
-          resultStr;
+          lib.pipe src [
+            (builtins.split "\n")
+            (builtins.filter builtins.isString)
+            (lines:
+              let result = builtins.foldl' reducer initial lines; in
+              assert result.found == false; # the block closed before end of the file
+              result.result
+            )
+            (builtins.concatStringsSep "\n")
+            # Context of substituted history settings is preserved
+            (assertPreservesContext patched-history-settings)
+            # Restore string context after `builtins.split` cuts it off
+            (lib.flip builtins.appendContext (builtins.getContext src))
+            # Something was actually removed
+            (x: assert x != src; x)
+            # String context is preserved
+            (assertPreservesContext src)
+          ];
+
+      inputContents =
+        let x = builtins.readFile "${__bashRC}/.bashrc"; in
+        # Read contents should not preserve any string context.
+        assert !(builtins.hasContext x); x;
     in
-      inlineHistorySettings (if overrideEditorEnvVar then withReplaces else withoutEditorOverride);
+      lib.pipe inputContents [
+        substitutePlaceholders
+        withReplaces
+        (if overrideEditorEnvVar then lib.id else withoutEditorOverride)
+        inlineHistorySettings
+      ];
 
   patched-aliases = ''
     ${substitutePlaceholders (builtins.readFile "${__bashRC}/${bash-aliases-file-name}")}
@@ -192,19 +247,38 @@ let
 
   patched-history-settings =
     let
-      history-settings =
-        substitutePlaceholders (builtins.readFile "${__bashRC}/${history-settings-file-name}");
-
       lineMapFn = line:
         let histFileMatch = builtins.match "^((export )?HISTFILE=).*$" line; in
         if ! isNull histFileMatch
-        then "${builtins.elemAt histFileMatch 0}~/${esc ".${kebab2snake __name}_history"}"
+        then "${builtins.elemAt histFileMatch 0}~/${esc history-file-name}"
         else line;
+
+      changeHistoryFile = src: lib.pipe src [
+        (builtins.split "\n")
+        (builtins.filter builtins.isString)
+        (map lineMapFn)
+        (builtins.concatStringsSep "\n")
+        # Restore string context after `builtins.split` cuts it off
+        (lib.flip builtins.appendContext (builtins.getContext src))
+        # Something was actually removed
+        (x: assert x != src; x)
+        # String context is preserved
+        (assertPreservesContext src)
+      ];
+
+      inputContents =
+        let x = builtins.readFile "${__bashRC}/${history-settings-file-name}"; in
+        # Read contents should not preserve any string context.
+        assert !(builtins.hasContext x); x;
     in
-      mapStringAsLines history-settings (map lineMapFn);
+      lib.pipe inputContents [
+        substitutePlaceholders
+        changeHistoryFile
+      ];
 
   bash-aliases-file-name = ".bash_aliases";
   history-settings-file-name = "history-settings.bash";
+  history-file-name = ".${kebab2snake __name}_history";
 
   patched-bashrc-file =
     pkgs.writeText "${__name}-patched-bashrc" patched-bashrc;
@@ -223,12 +297,46 @@ let
     ]}
   '';
 
-  this-bash = wrapExecutable e.bash {
-    inherit checkPhase;
+  this-bash = (pkgs.stdenvNoCC.mkDerivation rec {
     name = __name;
-    env = { ${dirEnvVarName} = dir; };
-    args = [ "--rcfile" patched-bashrc-file ];
-  } // {
+    pname = __name;
+    meta.mainProgram = __name;
+    dontUnpack = true;
+    doCheck = true;
+    doInstallCheck = true;
+
+    nativeBuildInputs = [
+      pkgs.makeBinaryWrapper
+    ];
+
+    installPhase = ''
+      runHook preInstall
+      mkdir -p "$out/bin"
+      CMD=(
+        makeWrapper ${es.bash} "$out"/bin/${esc meta.mainProgram}
+        --add-flags ${esc "--rcfile ${patched-bashrc-file}"}
+        --set ${esc dirEnvVarName} ${esc "${dir}"}
+      )
+      "''${CMD[@]}"
+      runHook postInstall
+    '';
+
+    installCheckPhase = ''
+      runHook preInstallCheck
+      bin="$out"/bin/${esc meta.mainProgram}
+
+      # Smoke test
+      "$bin" --version | grep -q '^GNU bash'
+      x=$("$bin" -ic 'printf %s "$HISTFILE"')
+      expected=$HOME/${esc history-file-name}
+      if [[ "$x" != "$expected" ]]; then
+        >&2 printf 'History file is “%s” but expected “%s”' "$x" "$expected"
+        exit 1
+      fi
+
+      runHook postInstallCheck
+    '';
+  }) // {
     shellPath = "/bin/${__name}";
     history-settings-file-path = "${dir}/${history-settings-file-name}";
     bashRC = __bashRC;
