@@ -30,7 +30,7 @@ jobs:
           SUB_TEST_CMD='printf %s "$HISTFILE"'
           TEST_CMD="wenzels-bash -ic ${SUB_TEST_CMD@Q}"
           RESULT=$(set -o xtrace; nix-shell --pure --run "$TEST_CMD")
-          EXPECTED=$HOME/.wenzels-bash-history
+          EXPECTED=$HOME/.wenzels_bash_history
           if [[ "$RESULT" == "$EXPECTED" ]]; then
             echo '[OK] Smoke test passed'
           else
