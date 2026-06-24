@@ -63,14 +63,6 @@ assert !(builtins.hasContext dirEnvVarName);
 let
   esc = lib.escapeShellArg;
 
-  fileIsReadable = file: let check = ''[[ -f $f && -r $f ]]''; in ''(
-    set -o nounset; f=${esc file}; if ! ${check}; then (set -o xtrace; ${check}) fi
-  )'';
-
-  fileIsExecutable = file: let check = ''[[ -f $f && -r $f && -x $f ]]''; in ''(
-    set -o nounset; f=${esc file}; if ! ${check}; then (set -o xtrace; ${check}) fi
-  )'';
-
   # Check that `b` preserves context of `a` but can be bigger.
   preservesContext =
     let
@@ -89,19 +81,20 @@ let
 
   vte-sh-file = "${pkgs.vte}/etc/profile.d/vte.sh";
 
-  # Executables mapping
-  e = {
-    bash = "${pkgs.bashInteractive}/bin/bash";
-    find = "${pkgs.findutils}/bin/find";
-    sed = "${pkgs.gnused}/bin/sed";
-    cp = "${pkgs.coreutils}/bin/cp";
-    mv = "${pkgs.coreutils}/bin/mv";
-    mkdir = "${pkgs.coreutils}/bin/mkdir";
-    chmod = "${pkgs.coreutils}/bin/chmod";
+  executablesMap = {
+    bash = pkgs.bashInteractive;
+    find = pkgs.findutils;
+    sed = pkgs.gnused;
+    cp = pkgs.coreutils;
+    mv = pkgs.coreutils;
+    mkdir = pkgs.coreutils;
+    chmod = pkgs.coreutils;
   };
 
+  # Executable bin paths mapping
+  eb = builtins.mapAttrs (lib.flip lib.getExe') executablesMap;
   # Escaped executables mapping (to use in shell strings)
-  es = builtins.mapAttrs (_: esc) e;
+  es = builtins.mapAttrs (_: esc) eb;
 
   dir = pkgs.runCommand (dirSuffix __name) {} ''
     set -o errexit || exit; set -o errtrace; set -o nounset; set -o pipefail
@@ -288,11 +281,13 @@ let
     pkgs.writeText "${__name}-patched-history-settings" patched-history-settings;
 
   checkPhase = ''
-    ${fileIsReadable vte-sh-file}
+    if ! [[ -f ${esc vte-sh-file} && -r ${esc vte-sh-file} ]]; then
+      (set -o xtrace; [[ -f ${esc vte-sh-file} && -r ${esc vte-sh-file} ]])
+    fi
 
-    ${lib.pipe e [
+    ${lib.pipe es [
       builtins.attrValues
-      (map fileIsExecutable)
+      (map (x: ">/dev/null type -- ${x}"))
       (builtins.concatStringsSep "\n")
     ]}
   '';
@@ -304,6 +299,7 @@ let
     dontUnpack = true;
     doCheck = true;
     doInstallCheck = true;
+    inherit checkPhase;
 
     nativeBuildInputs = [
       pkgs.makeBinaryWrapper
