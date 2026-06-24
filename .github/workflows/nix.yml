@@ -72,10 +72,25 @@ jobs:
         shell: bash
         run: |
           set -o errexit || exit; set -o errtrace; set -o nounset; set -o pipefail
-          set -o xtrace
-          nix-shell -A wenzels-bash
-          nix-shell -A shell
-          nix-shell -A patched-bashrc-file
-          nix-shell -A patched-aliases-file
-          nix-shell nix/test.nix -A wenzels-bash
-          nix-shell nix/test.nix -A shell
+          (
+            NIX_CONFIG_PATH=$PWD/default.nix
+            DIR=$(mktemp -d)
+            cd -- "$DIR"
+            (set -o xtrace; pwd; nix-build -- "$NIX_CONFIG_PATH")
+            OUTPUTS_COUNT=$(printf '%s\n' result* | wc -l)
+            if (( OUTPUTS_COUNT < 6 )); then
+              >&2 printf 'Unexpected outputs amount: “%s”\n' "$OUTPUTS_COUNT"
+              exit 1
+            fi
+          )
+          (
+            NIX_CONFIG_PATH=$PWD/nix/test.nix
+            DIR=$(mktemp -d)
+            cd -- "$DIR"
+            (set -o xtrace; pwd; nix-build -- "$NIX_CONFIG_PATH")
+            OUTPUTS_COUNT=$(printf '%s\n' result* | wc -l)
+            if (( OUTPUTS_COUNT < 6 )); then
+              >&2 printf 'Unexpected outputs amount: “%s”\n' "$OUTPUTS_COUNT"
+              exit 1
+            fi
+          )

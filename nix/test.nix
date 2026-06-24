@@ -44,14 +44,6 @@ let
     . "''$${dirEnvVarName}/misc/aliases/gpg.bash"
     . "''$${dirEnvVarName}/misc/aliases/gpaste.bash"
   '';
-
-  shell = pkgs.mkShell {
-    name = "${bashrc.name}-test-shell";
-    buildInputs = [ bashrc.${bashrc.name} ];
-  };
 in
 
-(if inNixShell then shell else {}) // {
-  ${bashrc.name} = bashrc;
-  inherit shell;
-}
+(if inNixShell then bashrc.shell else {}) // bashrc
