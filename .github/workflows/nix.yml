@@ -77,6 +77,7 @@ jobs:
             DIR=$(mktemp -d)
             cd -- "$DIR"
             (set -o xtrace; pwd; nix-build -- "$NIX_CONFIG_PATH")
+            ls -lah
             OUTPUTS_COUNT=$(printf '%s\n' result* | wc -l)
             if (( OUTPUTS_COUNT < 6 )); then
               >&2 printf 'Unexpected outputs amount: “%s”\n' "$OUTPUTS_COUNT"
@@ -88,6 +89,7 @@ jobs:
             DIR=$(mktemp -d)
             cd -- "$DIR"
             (set -o xtrace; pwd; nix-build -- "$NIX_CONFIG_PATH")
+            ls -lah
             OUTPUTS_COUNT=$(printf '%s\n' result* | wc -l)
             if (( OUTPUTS_COUNT < 6 )); then
               >&2 printf 'Unexpected outputs amount: “%s”\n' "$OUTPUTS_COUNT"
