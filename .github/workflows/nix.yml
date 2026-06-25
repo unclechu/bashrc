@@ -9,7 +9,7 @@ on:
       - '*'
 
 jobs:
-  neovim-nix-build:
+  bashrc-nix-build:
     runs-on: ubuntu-latest
 
     steps:
@@ -23,7 +23,7 @@ jobs:
             access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
             system-features = nixos-test benchmark big-parallel kvm
 
-      - name: Build Neovim config and run a smoke test
+      - name: Build this Bash config config and run a smoke test
         shell: bash
         run: |
           set -o errexit || exit; set -o errtrace; set -o nounset; set -o pipefail
