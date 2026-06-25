@@ -99,9 +99,7 @@ let
   dir = pkgs.runCommand (dirSuffix __name) {} ''
     set -o errexit || exit; set -o errtrace; set -o nounset; set -o pipefail
 
-    (
-      ${checkPhase}
-    )
+    ${mainCheckPhase}
 
     ${es.mkdir} tmp
     >/dev/null pushd tmp
@@ -280,7 +278,9 @@ let
   patched-history-settings-file =
     pkgs.writeText "${__name}-patched-history-settings" patched-history-settings;
 
-  checkPhase = ''
+  mainCheckPhase = ''(
+    set -o errexit || exit; set -o errtrace; set -o nounset; set -o pipefail
+
     if ! [[ -f ${esc vte-sh-file} && -r ${esc vte-sh-file} ]]; then
       (set -o xtrace; [[ -f ${esc vte-sh-file} && -r ${esc vte-sh-file} ]])
     fi
@@ -290,7 +290,7 @@ let
       (map (x: ">/dev/null type -- ${x}"))
       (builtins.concatStringsSep "\n")
     ]}
-  '';
+  )'';
 
   smokeTest = ''(
     set -o errexit; set -o errtrace; set -o nounset; set -o pipefail
@@ -310,7 +310,12 @@ let
     dontUnpack = true;
     doCheck = true;
     doInstallCheck = true;
-    inherit checkPhase;
+
+    checkPhase = ''
+      runHook preCheck
+      ${mainCheckPhase}
+      runHook postCheck
+    '';
 
     nativeBuildInputs = [
       pkgs.makeBinaryWrapper
